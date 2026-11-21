@@ -15,9 +15,20 @@ const listaSchema = new mongoose.Schema(
   {
     nombre: { type: String, required: true, trim: true },
     presupuesto: { type: Number, required: true, min: 0 },
-    items: { type: [itemSchema], default: [] }
+    items: { type: [itemSchema], default: [] },
+    // Dueño de la lista (solo si la persona tiene cuenta). Sin dueño = lista "de dispositivo".
+    usuario: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', index: true },
+    // Clave del dispositivo que la creó (solo para listas sin cuenta). No se manda al navegador.
+    dispositivo: { type: String, index: true }
   },
   { timestamps: true }
 );
+
+listaSchema.set('toJSON', {
+  transform: (doc, ret) => {
+    delete ret.dispositivo;
+    return ret;
+  }
+});
 
 module.exports = mongoose.model('Lista', listaSchema);

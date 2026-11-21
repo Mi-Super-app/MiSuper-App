@@ -6,6 +6,7 @@ const morgan = require('morgan');
 const conectarDB = require('./config/db');
 const { iniciarProgramador } = require('./jobs/programador');
 const { noEncontrado, manejadorErrores } = require('./middleware/errores');
+const { leerUsuario, leerDispositivo } = require('./middleware/auth');
 const ActualizacionLog = require('./models/ActualizacionLog');
 const Producto = require('./models/Producto');
 const Supermercado = require('./models/Supermercado');
@@ -13,8 +14,9 @@ const Supermercado = require('./models/Supermercado');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.set('trust proxy', 1); // en Render hay un "proxy" delante: así req.ip es la IP real
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
 app.use(morgan('dev')); // muestra en la consola cada petición que llega
 
 // Estado de la API: cuándo se actualizaron los precios y cuántos datos hay
@@ -29,6 +31,10 @@ app.get('/api/estado', async (req, res) => {
   });
 });
 
+// En todas las rutas /api: ¿quién es? (cuenta con sesión y/o dispositivo)
+app.use('/api', leerUsuario, leerDispositivo);
+
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api/supermercados', require('./routes/supermercados'));
 app.use('/api/productos', require('./routes/productos'));
 app.use('/api/precios', require('./routes/precios'));

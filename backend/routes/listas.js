@@ -5,45 +5,62 @@ const Producto = require('../models/Producto');
 const Supermercado = require('../models/Supermercado');
 const ProductoSupermercado = require('../models/ProductoSupermercado');
 
-const mongoose = require('mongoose');
-
 const redondear = n => Math.round(n * 100) / 100;
 
-// GET /api/listas?ids=ID1,ID2 → solo las listas pedidas
-// (cada celular/computadora guarda los ids de SUS listas y solo pide esas)
-// GET /api/listas            → todas (útil para pruebas)
+/* ── ¿QUIÉN PUEDE VER UNA LISTA? ──
+   - Si la lista tiene dueño (cuenta): solo ese usuario (con su sesión).
+   - Si no tiene dueño: solo el dispositivo que la creó (encabezado x-dispositivo,
+     una clave al azar que cada celular/compu genera y guarda).
+   Si no tiene permiso, respondemos "no encontrada" (no damos pistas de que existe). */
+function puedeVer(lista, req) {
+  if (lista.usuario) return Boolean(req.usuarioId) && lista.usuario.equals(req.usuarioId);
+  return Boolean(req.dispositivo) && lista.dispositivo === req.dispositivo;
+}
+
+// Busca la lista de la URL y revisa el permiso. La deja en req.lista
+async function cargarLista(req, res, next) {
+  const lista = await Lista.findById(req.params.id);
+  if (!lista || !puedeVer(lista, req)) return res.status(404).json({ error: 'Lista no encontrada' });
+  req.lista = lista;
+  next();
+}
+
+// El dueño de las listas nuevas: la cuenta (si hay sesión) o el dispositivo
+function dueno(req) {
+  if (req.usuarioId) return { usuario: req.usuarioId };
+  if (req.dispositivo) return { dispositivo: req.dispositivo };
+  return null;
+}
+
+// GET /api/listas → MIS listas (de mi cuenta, o de este dispositivo si no tengo cuenta)
 router.get('/', async (req, res) => {
-  const filtro = {};
-  if (req.query.ids !== undefined) {
-    const ids = String(req.query.ids)
-      .split(',')
-      .filter(id => mongoose.Types.ObjectId.isValid(id));
-    filtro._id = { $in: ids };
-  }
+  let filtro;
+  if (req.usuarioId) filtro = { usuario: req.usuarioId };
+  else if (req.dispositivo) filtro = { dispositivo: req.dispositivo, usuario: { $exists: false } };
+  else return res.json([]);
   const listas = await Lista.find(filtro).sort('-updatedAt');
   res.json(listas);
 });
 
 // POST /api/listas  { nombre, presupuesto }
 router.post('/', async (req, res) => {
+  const quien = dueno(req);
+  if (!quien) return res.status(400).json({ error: 'Falta el identificador del dispositivo' });
   const { nombre, presupuesto } = req.body;
-  const lista = await Lista.create({ nombre, presupuesto });
+  const lista = await Lista.create({ nombre, presupuesto, ...quien });
   res.status(201).json(lista);
 });
 
 // GET /api/listas/:id → una lista con los datos de sus productos
-router.get('/:id', async (req, res) => {
-  const lista = await Lista.findById(req.params.id).populate('items.producto');
-  if (!lista) return res.status(404).json({ error: 'Lista no encontrada' });
-  res.json(lista);
+router.get('/:id', cargarLista, async (req, res) => {
+  res.json(await req.lista.populate('items.producto'));
 });
 
 // PUT /api/listas/:id  { nombre?, presupuesto?, desmarcarTodo? }
 // desmarcarTodo: true → quita la marca de "comprado" a todos los productos
-router.put('/:id', async (req, res) => {
+router.put('/:id', cargarLista, async (req, res) => {
   const { nombre, presupuesto, desmarcarTodo } = req.body;
-  const lista = await Lista.findById(req.params.id);
-  if (!lista) return res.status(404).json({ error: 'Lista no encontrada' });
+  const lista = req.lista;
   if (nombre !== undefined) lista.nombre = nombre;
   if (presupuesto !== undefined) lista.presupuesto = presupuesto;
   if (desmarcarTodo) lista.items.forEach(i => (i.comprado = false));
@@ -52,30 +69,28 @@ router.put('/:id', async (req, res) => {
 });
 
 // POST /api/listas/:id/duplicar  { nombre? } → copia la lista (para reutilizarla otra semana)
-router.post('/:id/duplicar', async (req, res) => {
-  const original = await Lista.findById(req.params.id);
-  if (!original) return res.status(404).json({ error: 'Lista no encontrada' });
+router.post('/:id/duplicar', cargarLista, async (req, res) => {
+  const original = req.lista;
   const copia = await Lista.create({
     nombre: req.body.nombre || `${original.nombre} (copia)`,
     presupuesto: original.presupuesto,
-    items: original.items.map(i => ({ producto: i.producto, cantidad: i.cantidad, comprado: false }))
+    items: original.items.map(i => ({ producto: i.producto, cantidad: i.cantidad, comprado: false })),
+    ...dueno(req)
   });
   res.status(201).json(copia);
 });
 
 // DELETE /api/listas/:id
-router.delete('/:id', async (req, res) => {
-  const lista = await Lista.findByIdAndDelete(req.params.id);
-  if (!lista) return res.status(404).json({ error: 'Lista no encontrada' });
+router.delete('/:id', cargarLista, async (req, res) => {
+  await req.lista.deleteOne();
   res.json({ mensaje: 'Lista eliminada' });
 });
 
 // POST /api/listas/:id/items  { productoId, cantidad }
 // Si el producto ya está en la lista, suma la cantidad.
-router.post('/:id/items', async (req, res) => {
+router.post('/:id/items', cargarLista, async (req, res) => {
   const { productoId, cantidad = 1 } = req.body;
-  const lista = await Lista.findById(req.params.id);
-  if (!lista) return res.status(404).json({ error: 'Lista no encontrada' });
+  const lista = req.lista;
   const producto = await Producto.findById(productoId);
   if (!producto) return res.status(404).json({ error: 'Producto no encontrado' });
 
@@ -88,9 +103,8 @@ router.post('/:id/items', async (req, res) => {
 });
 
 // PUT /api/listas/:id/items/:productoId  { cantidad?, comprado? }
-router.put('/:id/items/:productoId', async (req, res) => {
-  const lista = await Lista.findById(req.params.id);
-  if (!lista) return res.status(404).json({ error: 'Lista no encontrada' });
+router.put('/:id/items/:productoId', cargarLista, async (req, res) => {
+  const lista = req.lista;
   const item = lista.items.find(i => i.producto.equals(req.params.productoId));
   if (!item) return res.status(404).json({ error: 'Ese producto no está en la lista' });
 
@@ -101,9 +115,8 @@ router.put('/:id/items/:productoId', async (req, res) => {
 });
 
 // DELETE /api/listas/:id/items/:productoId
-router.delete('/:id/items/:productoId', async (req, res) => {
-  const lista = await Lista.findById(req.params.id);
-  if (!lista) return res.status(404).json({ error: 'Lista no encontrada' });
+router.delete('/:id/items/:productoId', cargarLista, async (req, res) => {
+  const lista = req.lista;
   lista.items = lista.items.filter(i => !i.producto.equals(req.params.productoId));
   await lista.save();
   res.json(await lista.populate('items.producto'));
@@ -112,9 +125,8 @@ router.delete('/:id/items/:productoId', async (req, res) => {
 // GET /api/listas/:id/comparar
 // LA FUNCIÓN PRINCIPAL DE LA APP: cuánto cuesta la lista en cada súper
 // y si alcanza el presupuesto.
-router.get('/:id/comparar', async (req, res) => {
-  const lista = await Lista.findById(req.params.id).populate('items.producto');
-  if (!lista) return res.status(404).json({ error: 'Lista no encontrada' });
+router.get('/:id/comparar', cargarLista, async (req, res) => {
+  const lista = await req.lista.populate('items.producto');
 
   const items = lista.items.filter(i => i.producto); // por si se borró algún producto
   const supermercados = await Supermercado.find().sort('nombre');
