@@ -61,13 +61,13 @@
     <!-- Pestañas (solo en computadora) -->
     <div class="tabs-escritorio" role="tablist">
       <button class="tab-esc" data-accion="ir" data-vista="productos" role="tab">🛒 <span data-i18n>Productos</span></button>
+      <button class="tab-esc" data-accion="ir" data-vista="ofertas" role="tab">🏷️ <span data-i18n>Ofertas</span></button>
       <button class="tab-esc" data-accion="ir" data-vista="comparar" role="tab">📊 <span data-i18n>Comparar</span></button>
       <button class="tab-esc" data-accion="ir" data-vista="gastos" role="tab">📅 <span data-i18n>Mis gastos</span></button>
       <button class="tab-esc" data-accion="ir" data-vista="ajustes" role="tab">⚙️ <span data-i18n>Ajustes</span></button>
     </div>
 
     <div class="header-der">
-      <span class="actualizado" id="actualizado" title="Los precios se actualizan solos todos los días" data-i18n-title>Cargando precios…</span>
       <button class="btn-cuenta" id="btn-cuenta" type="button" data-accion="cuenta" data-modo="entrar" aria-label="Entrar o crear cuenta (opcional)">
         <span class="avatar vacio-av">👤</span><span class="cuenta-txt">Entrar</span>
       </button>
@@ -92,6 +92,7 @@
           <input type="search" id="buscar" placeholder="Buscar: leche, arroz, café…" autocomplete="off" aria-label="Buscar producto" data-i18n-ph data-i18n-aria>
         </label>
         <div class="chips" id="chips" role="tablist" aria-label="Categorías"></div>
+        <p class="aviso-corto" data-i18n>Precios referenciales. El precio válido es el de la tienda.</p>
       </div>
       <div class="prod-grid" id="prod-grid">
         <article class="prod-card esqueleto" aria-hidden="true">
@@ -111,6 +112,18 @@
           <div class="precios"><div class="esq esq-precio"></div><div class="esq esq-precio"></div><div class="esq esq-precio"></div></div>
         </article>
       </div>
+    </section>
+
+    <!-- ══ OFERTAS DE HOY ══ -->
+    <section class="vista" id="vista-ofertas" aria-label="Ofertas de hoy">
+      <div class="vista-cabeza">
+        <h1 class="titulo"><b data-i18n>Ofertas</b> <span data-i18n>de hoy</span></h1>
+        <p class="sub" data-i18n>Productos con rebaja en las tiendas, del mayor al menor descuento.</p>
+        <div class="chips" id="ofertas-supers" role="tablist" aria-label="Supermercados"></div>
+        <div class="chips ofertas-cats" id="ofertas-cats" role="tablist" aria-label="Categorías"></div>
+        <p class="aviso-corto" data-i18n>Precios referenciales. El precio válido es el de la tienda.</p>
+      </div>
+      <div class="prod-grid" id="ofertas-grid"><div class="cargando" data-i18n>Cargando ofertas…</div></div>
     </section>
 
     <!-- ══ COMPARAR ══ -->
@@ -163,6 +176,7 @@
   <div class="tabbar" role="tablist" aria-label="Secciones">
     <span class="tab-indicador" aria-hidden="true"></span>
     <button class="tab" data-accion="ir" data-vista="productos" role="tab"><span class="tab-ico">🛒</span><span data-i18n>Productos</span></button>
+    <button class="tab" data-accion="ir" data-vista="ofertas" role="tab"><span class="tab-ico">🏷️</span><span data-i18n>Ofertas</span></button>
     <button class="tab" data-accion="ir" data-vista="lista" role="tab"><span class="tab-ico">📝<span class="badge" id="badge" hidden>0</span></span><span data-i18n>Mi lista</span></button>
     <button class="tab" data-accion="ir" data-vista="comparar" role="tab"><span class="tab-ico">📊</span><span data-i18n>Comparar</span></button>
     <button class="tab" data-accion="ir" data-vista="gastos" role="tab"><span class="tab-ico">📅</span><span data-i18n>Gastos</span></button>

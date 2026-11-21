@@ -15,7 +15,7 @@
 //                  '*/2 * * * *' = cada 2 minutos (solo para probar)
 
 const cron = require('node-cron');
-const { actualizarPrecios } = require('./actualizarPrecios');
+const { actualizarPrecios, hayPendiente } = require('./actualizarPrecios');
 const ActualizacionLog = require('../models/ActualizacionLog');
 
 const ZONA_HORARIA = 'America/Managua';
@@ -40,9 +40,18 @@ async function revisarSiFaltaActualizar() {
   }
 }
 
+// Si Render reinició el servidor en medio de una actualización, se continúa
+// donde se quedó (las categorías ya guardadas se saltan). Devuelve true si continuó una.
+async function reanudarSiQuedoPendiente() {
+  if (!(await hayPendiente())) return false;
+  console.log('[precios] Quedó una actualización a medias. Continuándola...');
+  correrSinRomper('reanudacion'); // sin await: el servidor sigue arrancando mientras tanto
+  return true;
+}
+
 function iniciarProgramador() {
   if (process.env.ACTUALIZACION_AUTOMATICA === 'false') {
-    console.log('[precios] Actualización automática desactivada (ACTUALIZACION_AUTOMATICA=false)');
+    console.log('[precios] Actualización automática desactivada (ACTUALIZACION_AUTOMATICA=false): tampoco se continúan las que quedaron a medias');
     return;
   }
 
@@ -55,9 +64,9 @@ function iniciarProgramador() {
   cron.schedule(horario, () => correrSinRomper('cron'), { timezone: ZONA_HORARIA });
   console.log(`[precios] Programado con node-cron: "${horario}" (${ZONA_HORARIA})`);
 
-  revisarSiFaltaActualizar().catch(error =>
-    console.error('[precios] No se pudo revisar la última actualización:', error.message)
-  );
+  reanudarSiQuedoPendiente()
+    .then(continuo => (continuo ? null : revisarSiFaltaActualizar()))
+    .catch(error => console.error('[precios] No se pudo revisar la última actualización:', error.message));
 }
 
 module.exports = { iniciarProgramador };

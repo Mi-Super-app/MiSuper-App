@@ -435,7 +435,7 @@ footer{
 .fm{font-family:'Bebas Neue';font-size:13px;letter-spacing:0.35em;color:rgba(255,255,255,0.3);}
 .fs{font-family:'Bebas Neue';font-size:28px;letter-spacing:0.05em;background:linear-gradient(135deg,var(--mint),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .foot-copy{font-size:12px;color:var(--text-3);font-weight:700;letter-spacing:0.3px;text-align:center;}
-.foot-links{display:flex;gap:24px;justify-content:flex-end;}
+.foot-links{display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:flex-end;}
 .foot-links a{color:var(--text-3);text-decoration:none;font-size:12px;font-weight:700;transition:color 0.2s;}
 .foot-links a:hover{color:var(--mint);}
 

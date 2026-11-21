@@ -3,10 +3,11 @@ const router = express.Router();
 const Supermercado = require('../models/Supermercado');
 const ProductoSupermercado = require('../models/ProductoSupermercado');
 const Producto = require('../models/Producto');
+const { slugsPausados, estaPausado } = require('../helpers/pausados');
 
 // GET /api/supermercados → todos los supermercados
 router.get('/', async (req, res) => {
-  const supermercados = await Supermercado.find().sort('nombre');
+  const supermercados = await Supermercado.find({ slug: { $nin: slugsPausados() } }).sort('nombre');
   res.json(supermercados);
 });
 
@@ -16,7 +17,7 @@ router.get('/', async (req, res) => {
 //     /api/supermercados/walmart/productos?categoria=lacteos   → solo una sección
 //     &pagina=2&limite=200   (son miles de productos: van por páginas, máx. 500)
 router.get('/:slug/productos', async (req, res) => {
-  const superm = await Supermercado.findOne({ slug: req.params.slug });
+  const superm = estaPausado(req.params.slug) ? null : await Supermercado.findOne({ slug: req.params.slug });
   if (!superm) return res.status(404).json({ error: 'Supermercado no encontrado' });
 
   const limite = Math.min(Math.max(parseInt(req.query.limite, 10) || 200, 1), 500);

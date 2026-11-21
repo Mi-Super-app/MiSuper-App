@@ -6,6 +6,7 @@ const Supermercado = require('../models/Supermercado');
 const ProductoSupermercado = require('../models/ProductoSupermercado');
 const HistorialPrecio = require('../models/HistorialPrecio');
 const { productosConPrecios } = require('../helpers/precios');
+const { pausados, superVisible } = require('../helpers/pausados');
 
 // Escapa caracteres especiales para usar el texto del usuario en una búsqueda
 function escaparRegex(texto) {
@@ -34,6 +35,7 @@ const LIMITE_MAXIMO = 200;
 // GET /api/productos?ids=ID1,ID2          → productos exactos (ej: los de una lista de compras)
 // GET /api/productos?todos=1              → todos, por páginas
 // GET /api/productos?...&orden=precio     → el más barato primero (en los súper de "supermercado")
+// GET /api/productos?...&orden=unidad     → el más barato por kilo, litro o unidad primero
 // Páginas: &pagina=2&limite=60 (máx. 200). El total viene en el encabezado X-Total.
 router.get('/', async (req, res) => {
   const { q, categoria, supermercado, ids, pagina: paginaTxt, limite: limiteTxt, todos, orden } = req.query;
@@ -53,7 +55,9 @@ router.get('/', async (req, res) => {
   // Los supermercados donde buscar precios (todos si no se dice)
   let supers = null;
   if (supermercado) {
-    supers = await Supermercado.find({ slug: { $in: String(supermercado).split(',') } }).select('_id').lean();
+    const { slugs } = await pausados();
+    const pedidos = String(supermercado).split(',').filter(s => !slugs.includes(s));
+    supers = await Supermercado.find({ slug: { $in: pedidos } }).select('_id').lean();
     if (!supers.length) return res.status(404).json({ error: 'Supermercado no encontrado' });
     const conPrecio = await ProductoSupermercado.distinct('producto', {
       supermercado: { $in: supers.map(s => s._id) },
@@ -68,11 +72,41 @@ router.get('/', async (req, res) => {
   const limite = Math.min(Math.max(parseInt(limiteTxt, 10) || (buscaTodo ? LIMITE_NORMAL : LIMITE_MAXIMO), 1), LIMITE_MAXIMO);
   const pagina = Math.max(parseInt(paginaTxt, 10) || 1, 1);
 
+  // Precio por unidad: se agrupan por medida (kilo, litro o unidad), empezando por la más común
+  // en lo que se buscó (ej: "aceite" → litros primero), porque no se puede comparar C$/kg con C$/L.
+  // Dentro de cada grupo, del más barato al más caro. Al final los que no tienen tamaño.
+  if (orden === 'unidad') {
+    const candidatos = await Producto.find(filtro).select('_id tamano').lean();
+    const tamanoDe = new Map(candidatos.filter(p => p.tamano && p.tamano.cantidad > 0).map(p => [String(p._id), p.tamano]));
+    const coincide = { producto: { $in: candidatos.map(p => p._id) }, precioActual: { $gt: 0 }, disponible: true };
+    coincide.supermercado = supers ? { $in: supers.map(s => s._id) } : await superVisible();
+    const minimos = await ProductoSupermercado.aggregate([
+      { $match: coincide },
+      { $group: { _id: '$producto', minimo: { $min: '$precioActual' } } }
+    ]);
+    const cuantos = {};
+    for (const t of tamanoDe.values()) cuantos[t.unidad] = (cuantos[t.unidad] || 0) + 1;
+    const grupo = Object.fromEntries(Object.keys(cuantos).sort((a, b) => cuantos[b] - cuantos[a]).map((u, i) => [u, i]));
+    const clave = m => {
+      const tamano = tamanoDe.get(String(m._id));
+      return tamano ? [grupo[tamano.unidad], m.minimo / tamano.cantidad] : [9, m.minimo];
+    };
+    minimos.forEach(m => { m.clave = clave(m); });
+    minimos.sort((a, b) => a.clave[0] - b.clave[0] || a.clave[1] - b.clave[1] || String(a._id).localeCompare(String(b._id)));
+    const pedazo = minimos.slice((pagina - 1) * limite, pagina * limite);
+    const encontrados = await Producto.find({ _id: { $in: pedazo.map(m => m._id) } }).lean();
+    const posicion = new Map(pedazo.map((m, i) => [String(m._id), i]));
+    encontrados.sort((a, b) => posicion.get(String(a._id)) - posicion.get(String(b._id)));
+    res.set('X-Total', String(minimos.length));
+    res.set('Access-Control-Expose-Headers', 'X-Total');
+    return res.json(await productosConPrecios(encontrados));
+  }
+
   // Más barato primero: se ordena por el precio más bajo entre los supermercados elegidos
   if (orden === 'precio') {
     const candidatos = await Producto.find(filtro).distinct('_id');
     const coincide = { producto: { $in: candidatos }, precioActual: { $gt: 0 }, disponible: true };
-    if (supers) coincide.supermercado = { $in: supers.map(s => s._id) };
+    coincide.supermercado = supers ? { $in: supers.map(s => s._id) } : await superVisible();
     const [resultado] = await ProductoSupermercado.aggregate([
       { $match: coincide },
       { $group: { _id: '$producto', minimo: { $min: '$precioActual' } } },
@@ -118,7 +152,7 @@ router.get('/:id', async (req, res) => {
 
 // GET /api/productos/:id/historial → cómo ha cambiado su precio en cada súper
 router.get('/:id/historial', async (req, res) => {
-  const historial = await HistorialPrecio.find({ producto: req.params.id })
+  const historial = await HistorialPrecio.find({ producto: req.params.id, supermercado: await superVisible() })
     .populate('supermercado', 'nombre')
     .sort('fecha');
   res.json(

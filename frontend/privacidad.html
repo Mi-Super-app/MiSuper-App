@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<!--
+  ══════════════════════════════════════════════════════════════════════
+  BORRADOR — DEBE REVISARLO UN ABOGADO ANTES DE TOMARLO COMO DEFINITIVO.
+  Este texto es una guía en lenguaje sencillo; no es asesoría legal.
+  Toma como referencia la Ley No. 787, Ley de Protección de Datos Personales
+  de Nicaragua, y su Reglamento (Decreto No. 36-2012). No cita artículos
+  específicos: el abogado puede agregar las referencias exactas que correspondan.
+  Antes de publicarlo:
+    1. Datos del responsable ya completados: Equipo técnico de Mi Súper,
+       misupernicargua@gmail.com, Managua, Nicaragua. Los reportes de precios
+       se borran solos a los 6 meses (backend/models/Reporte.js).
+    2. Confirma qué servicio de correo usas para "Olvidé mi contraseña"
+       (Brevo u otro) y ajusta la sección 4.
+    3. Pide a un abogado con práctica en Nicaragua que lo revise.
+    4. Si cambias el contenido, actualiza la fecha y la versión aquí y en
+       backend/helpers/legal.js (VERSION_TERMINOS).
+  ══════════════════════════════════════════════════════════════════════
+-->
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Mi Súper · Política de privacidad</title>
+  <meta name="description" content="Política de privacidad de Mi Súper: qué datos se guardan, para qué y cómo ejercer tus derechos.">
+  <meta name="theme-color" content="#0a1a2c">
+  <link rel="icon" href="img/icono.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/legal.css">
+  <script>
+    /* Tema, tamaño de letra e idioma guardados (antes de pintar, para que no parpadee) */
+    (function () {
+      var raiz = document.documentElement, t = 'dark', a = {};
+      try {
+        var s = localStorage.getItem('misuper-theme');
+        if (s === 'light' || s === 'dark') t = s;
+        if (s === 'auto') t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        a = JSON.parse(localStorage.getItem('misuper-ajustes') || '{}') || {};
+      } catch (e) { }
+      raiz.setAttribute('data-theme', t);
+      raiz.setAttribute('data-letra', a.letra === 'grande' ? 'grande' : 'normal');
+      raiz.setAttribute('lang', a.idioma === 'en' ? 'en' : 'es');
+    })();
+  </script>
+</head>
+
+<body>
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+
+  <header class="app-header legal-header">
+    <a class="brand" href="index.html" aria-label="Mi Súper">
+      <img src="img/icono.svg" alt="" width="34" height="34">
+      <span class="brand-text"><span class="brand-mi">MI</span><span class="brand-super">SÚPER</span></span>
+    </a>
+    <div class="header-der">
+      <button class="btn-ghost" type="button" data-cambiar-idioma>English</button>
+      <a class="btn-ghost" href="app.html" data-texto-es="← Ir a la app" data-texto-en="← Go to the app">← Ir a la app</a>
+    </div>
+  </header>
+
+  <main class="legal-main">
+
+    <!-- ═════════════════════════ ESPAÑOL ═════════════════════════ -->
+    <article class="legal-doc" data-idioma="es" lang="es">
+      <h1>Política de privacidad</h1>
+      <p class="legal-fecha">Última actualización: 21 de noviembre de 2026 · Versión 2026-11-21</p>
+
+      <p class="legal-intro">En pocas palabras: guardamos solo lo necesario para que la app funcione. No vendemos
+        tus datos, no mostramos publicidad y podés borrar tu cuenta cuando quieras desde la app.</p>
+
+      <p>Esta política explica qué datos personales trata Mi Súper, para qué y qué derechos tenés. Toma como
+        referencia la <strong>Ley No. 787, Ley de Protección de Datos Personales</strong> de Nicaragua, y su
+        Reglamento (Decreto No. 36-2012).</p>
+
+      <h2 id="responsable">1. Quién es el responsable de tus datos</h2>
+      <p>El responsable del tratamiento de tus datos es el Equipo técnico de Mi Súper, con
+        domicilio en Managua, Nicaragua. Podés escribir a
+        <a href="mailto:misupernicargua@gmail.com">misupernicargua@gmail.com</a> para cualquier consulta sobre tus datos.</p>
+
+      <h2 id="datos">2. Qué datos guardamos</h2>
+      <p><strong>Si usás la app sin cuenta:</strong></p>
+      <ul>
+        <li>Una <strong>clave aleatoria del dispositivo</strong>, que crea tu navegador. No contiene tu nombre ni
+          otros datos tuyos; sirve para saber qué listas son de este dispositivo.</li>
+        <li>Tus <strong>listas</strong>: nombre de la lista, productos, cantidades, presupuesto y qué marcaste como
+          comprado.</li>
+        <li>Los <strong>gastos</strong> que guardás al tocar "Terminé mi compra": nombre de la lista, supermercado,
+          total, presupuesto, cantidad de productos y fecha.</li>
+      </ul>
+      <p><strong>Si creás una cuenta</strong>, además:</p>
+      <ul>
+        <li>Tu <strong>nombre</strong> y tu <strong>correo</strong>.</li>
+        <li>Tu <strong>contraseña cifrada</strong> (con bcrypt). Nunca se guarda tal cual: nadie puede leerla, ni
+          siquiera nosotros.</li>
+        <li>La <strong>fecha</strong> en que aceptaste los Términos de uso y esta política, y qué
+          <strong>versión</strong> aceptaste.</li>
+        <li>Si pedís recuperar tu contraseña: un código cifrado que vence en 1 hora.</li>
+      </ul>
+      <p><strong>Si reportás un precio incorrecto:</strong> el mensaje, el producto y, si decidís dejarlo, un correo
+        de contacto. Si tenés sesión iniciada, el reporte queda asociado a tu cuenta.</p>
+      <p><strong>Datos técnicos:</strong> para evitar abusos, el servidor usa tu dirección IP por unos minutos, solo
+        en memoria, para limitar los intentos de inicio de sesión; no se guarda en la base de datos. Los proveedores
+        de la sección 4 pueden registrar datos técnicos de la conexión, como la dirección IP, según sus propias
+        políticas.</p>
+      <p>No pedimos tu ubicación, número de teléfono, datos de pago ni documentos de identidad. No usamos cookies de publicidad ni herramientas de seguimiento.</p>
+
+      <h2 id="para-que">3. Para qué usamos tus datos</h2>
+      <p>Solo para que la app funcione:</p>
+      <ul>
+        <li>guardar y mostrarte tus listas y gastos, en este dispositivo o en todos los tuyos si tenés cuenta;</li>
+        <li>mantener tu sesión iniciada;</li>
+        <li>enviarte el correo para recuperar tu contraseña cuando lo pidas;</li>
+        <li>revisar y corregir los precios que nos reportes;</li>
+        <li>proteger el servicio contra abusos.</li>
+      </ul>
+      <p>No usamos tus datos para publicidad ni para hacer perfiles. Al crear una cuenta, nos das tu consentimiento
+        para tratar tus datos como explica esta política.</p>
+
+      <h2 id="compartir">4. Con quién se comparten</h2>
+      <p><strong>No vendemos, alquilamos ni compartimos tus datos</strong> con nadie, salvo con los proveedores
+        técnicos que hacen funcionar la app, y solo para eso:</p>
+      <ul>
+        <li><strong>MongoDB Atlas</strong>: la base de datos donde se guardan tus listas, gastos y cuenta.</li>
+        <li><strong>Render</strong>: el servidor donde funciona la app.</li>
+        <li>El <strong>servicio de envío de correos</strong> (por ejemplo, Brevo), solo cuando pedís recuperar tu
+          contraseña.</li>
+        <li><strong>Google Fonts</strong>: las páginas cargan sus tipos de letra desde servidores de Google, por lo
+          que tu navegador se conecta a ellos y Google puede recibir tu dirección IP.</li>
+      </ul>
+      <p>Estos proveedores <strong>pueden estar ubicados fuera de Nicaragua</strong> (por ejemplo, en Estados Unidos
+        o en Europa), por lo que tus datos pueden guardarse o procesarse en otros países.</p>
+      <p>También podríamos entregar datos si una autoridad competente lo exige conforme a la ley.</p>
+
+      <h2 id="navegador">5. Qué se guarda en tu navegador</h2>
+      <p>La app guarda estos datos en el almacenamiento local de tu navegador (<code>localStorage</code>), no en
+        cookies:</p>
+      <ul>
+        <li><code>misuper-dispositivo</code>: la clave aleatoria de este dispositivo.</li>
+        <li><code>misuper-token</code>: tu sesión, si iniciaste sesión (vence a los 30 días).</li>
+        <li><code>misuper-ajustes</code>: idioma, tamaño de letra, tus supermercados, presupuesto inicial, orden de
+          los productos y animaciones.</li>
+        <li><code>misuper-theme</code>: el tema (claro, oscuro o automático).</li>
+        <li><code>misuper-lista-activa</code>: qué lista tenías abierta.</li>
+      </ul>
+      <p>Si instalás la app, tu navegador también guarda una copia de sus archivos para que abra sin internet. Podés
+        borrar todo esto desde la configuración de tu navegador (borrar los datos del sitio).</p>
+
+      <h2 id="tiempo">6. Cuánto tiempo guardamos tus datos</h2>
+      <ul>
+        <li><strong>Cuenta</strong>: mientras exista. Al eliminarla desde Ajustes → Cuenta → Eliminar mi cuenta, se
+          borran de inmediato tu cuenta, tus listas y tus gastos.</li>
+        <li><strong>Listas y gastos sin cuenta</strong>: hasta que los borres desde la app. Si borrás los datos de tu
+          navegador, la clave del dispositivo se pierde y ya no podrás ver esas listas; podés escribirnos para que
+          las eliminemos.</li>
+        <li><strong>Códigos para recuperar la contraseña</strong>: vencen en 1 hora.</li>
+        <li><strong>Reportes de precios</strong>: se borran automáticamente a los 6 meses de recibidos.</li>
+      </ul>
+
+      <h2 id="derechos">7. Tus derechos y cómo ejercerlos</h2>
+      <p>Conforme a la Ley No. 787, tenés derecho a:</p>
+      <ul>
+        <li><strong>Acceso</strong>: saber qué datos tuyos tenemos.</li>
+        <li><strong>Rectificación</strong>: corregir datos inexactos.</li>
+        <li><strong>Cancelación</strong>: pedir que borremos tus datos.</li>
+        <li><strong>Oposición</strong>: oponerte a que tratemos tus datos para algún fin.</li>
+      </ul>
+      <p><strong>Desde la app</strong>, sin tener que escribirnos:</p>
+      <ul>
+        <li>ver y cambiar tu nombre y tu contraseña en Ajustes → Cuenta;</li>
+        <li>borrar listas y gastos;</li>
+        <li>borrar tu cuenta y todos sus datos con el botón <strong>"Eliminar mi cuenta"</strong> (Ajustes →
+          Cuenta).</li>
+      </ul>
+      <p><strong>Por correo</strong>: para cualquier otra solicitud (por ejemplo, cambiar tu correo o pedir una copia
+        de tus datos), escribí a <a href="mailto:misupernicargua@gmail.com">misupernicargua@gmail.com</a> desde el correo de tu cuenta,
+        diciendo qué derecho querés ejercer. Te responderemos dentro del plazo que establece la ley.</p>
+      <p>Si considerás que no atendimos bien tu solicitud, podés acudir a la autoridad de protección de datos
+        personales que establece la Ley No. 787.</p>
+
+      <h2 id="seguridad">8. Cómo protegemos tus datos</h2>
+      <ul>
+        <li>La conexión con la app es cifrada (HTTPS).</li>
+        <li>Las contraseñas se guardan cifradas con bcrypt, y los códigos para recuperarlas también se guardan
+          cifrados y vencen en 1 hora.</li>
+        <li>Se limitan los intentos de inicio de sesión para evitar que adivinen contraseñas.</li>
+        <li>Las sesiones vencen a los 30 días.</li>
+        <li>Las funciones de administración están protegidas con una clave.</li>
+        <li>Pedimos solo los datos necesarios.</li>
+      </ul>
+      <p>Ningún sistema es 100 % seguro. Si ocurriera un incidente que afecte tus datos, te avisaremos.</p>
+
+      <h2 id="menores">9. Menores de edad</h2>
+      <p>Mi Súper no está dirigida a menores de edad. Si sos menor de edad, no crees una cuenta. Si sabés que un menor
+        nos dio sus datos, escribinos y los eliminaremos.</p>
+
+      <h2 id="cambios">10. Cambios a esta política</h2>
+      <p>Podemos actualizar esta política. La fecha de la última actualización aparece al inicio de esta página. Si
+        el cambio es importante, lo avisaremos dentro de la app.</p>
+
+      <h2 id="contacto">11. Contacto</h2>
+      <p>Responsable: Equipo técnico de Mi Súper<br>
+        Correo: <a href="mailto:misupernicargua@gmail.com">misupernicargua@gmail.com</a><br>
+        Ciudad: Managua, Nicaragua</p>
+      <p>Ver también los <a href="terminos.html">Términos de uso</a>.</p>
+    </article>
+
+    <!-- ═════════════════════════ ENGLISH ═════════════════════════ -->
+    <article class="legal-doc" data-idioma="en" lang="en">
+      <h1>Privacy policy</h1>
+      <p class="legal-fecha">Last updated: November 21, 2026 · Version 2026-11-21</p>
+
+      <p class="legal-intro">In short: we keep only what the app needs to work. We don't sell your data, we don't
+        show ads, and you can delete your account at any time from the app.</p>
+
+      <p>This policy explains what personal data Mi Súper handles, why, and what rights you have. It is based on
+        Nicaragua's <strong>Law No. 787, Personal Data Protection Law</strong> (Ley de Protección de Datos
+        Personales), and its Regulations (Decree No. 36-2012). If there is any difference between the Spanish and
+        English versions, the Spanish version prevails.</p>
+
+      <h2>1. Who is responsible for your data</h2>
+      <p>The party responsible for your data is the Mi Súper Technical Team (Equipo técnico de Mi Súper), based in
+        Managua, Nicaragua. You can write to
+        <a href="mailto:misupernicargua@gmail.com">misupernicargua@gmail.com</a> with any question about your data.</p>
+
+      <h2>2. What data we keep</h2>
+      <p><strong>If you use the app without an account:</strong></p>
+      <ul>
+        <li>A <strong>random device key</strong>, created by your browser. It does not contain your name or any other
+          personal data; it is used to know which lists belong to this device.</li>
+        <li>Your <strong>lists</strong>: list name, products, quantities, budget and what you marked as bought.</li>
+        <li>The <strong>expenses</strong> you save when you tap "I'm done shopping": list name, supermarket, total,
+          budget, number of products and date.</li>
+      </ul>
+      <p><strong>If you create an account</strong>, also:</p>
+      <ul>
+        <li>Your <strong>name</strong> and <strong>email</strong>.</li>
+        <li>Your <strong>encrypted password</strong> (with bcrypt). It is never stored as is: nobody can read it, not
+          even us.</li>
+        <li>The <strong>date</strong> you accepted the Terms of use and this policy, and which
+          <strong>version</strong> you accepted.</li>
+        <li>If you ask to reset your password: an encrypted code that expires in 1 hour.</li>
+      </ul>
+      <p><strong>If you report a wrong price:</strong> the message, the product and, if you choose to leave it, a
+        contact email. If you are signed in, the report is linked to your account.</p>
+      <p><strong>Technical data:</strong> to prevent abuse, the server uses your IP address for a few minutes, only in
+        memory, to limit sign-in attempts; it is not stored in the database. The providers in section 4 may log
+        technical connection data, such as your IP address, under their own policies.</p>
+      <p>We don't ask for your location, phone number, payment details or ID documents. We don't use advertising cookies or tracking tools.</p>
+
+      <h2>3. What we use your data for</h2>
+      <p>Only to make the app work:</p>
+      <ul>
+        <li>to save and show your lists and expenses, on this device or on all your devices if you have an
+          account;</li>
+        <li>to keep you signed in;</li>
+        <li>to send you the password reset email when you ask for it;</li>
+        <li>to review and fix the prices you report;</li>
+        <li>to protect the service against abuse.</li>
+      </ul>
+      <p>We don't use your data for advertising or profiling. By creating an account, you consent to us handling
+        your data as this policy explains.</p>
+
+      <h2>4. Who we share it with</h2>
+      <p><strong>We don't sell, rent or share your data</strong> with anyone, except the technical providers that run
+        the app, and only for that purpose:</p>
+      <ul>
+        <li><strong>MongoDB Atlas</strong>: the database where your lists, expenses and account are stored.</li>
+        <li><strong>Render</strong>: the server where the app runs.</li>
+        <li>The <strong>email delivery service</strong> (for example, Brevo), only when you ask to reset your
+          password.</li>
+        <li><strong>Google Fonts</strong>: the pages load their fonts from Google's servers, so your browser connects
+          to them and Google may receive your IP address.</li>
+      </ul>
+      <p>These providers <strong>may be located outside Nicaragua</strong> (for example, in the United States or
+        Europe), so your data may be stored or processed in other countries.</p>
+      <p>We could also hand over data if a competent authority legally requires it.</p>
+
+      <h2>5. What is stored in your browser</h2>
+      <p>The app stores this data in your browser's local storage (<code>localStorage</code>), not in cookies:</p>
+      <ul>
+        <li><code>misuper-dispositivo</code>: this device's random key.</li>
+        <li><code>misuper-token</code>: your session, if you signed in (expires after 30 days).</li>
+        <li><code>misuper-ajustes</code>: language, text size, your supermarkets, default budget, product order and
+          animations.</li>
+        <li><code>misuper-theme</code>: the theme (light, dark or automatic).</li>
+        <li><code>misuper-lista-activa</code>: which list you had open.</li>
+      </ul>
+      <p>If you install the app, your browser also keeps a copy of its files so it opens without internet. You can
+        delete all of this from your browser settings (clear site data).</p>
+
+      <h2>6. How long we keep your data</h2>
+      <ul>
+        <li><strong>Account</strong>: while it exists. When you delete it from Settings → Account → Delete my account,
+          your account, lists and expenses are deleted immediately.</li>
+        <li><strong>Lists and expenses without an account</strong>: until you delete them in the app. If you clear
+          your browser data, the device key is lost and you won't be able to see those lists anymore; you can write
+          to us so we delete them.</li>
+        <li><strong>Password reset codes</strong>: expire after 1 hour.</li>
+        <li><strong>Price reports</strong>: automatically deleted 6 months after they are received.</li>
+      </ul>
+
+      <h2>7. Your rights and how to use them</h2>
+      <p>Under Law No. 787, you have the right to:</p>
+      <ul>
+        <li><strong>Access</strong>: know what data we have about you.</li>
+        <li><strong>Rectification</strong>: correct inaccurate data.</li>
+        <li><strong>Cancellation</strong>: ask us to delete your data.</li>
+        <li><strong>Objection</strong>: object to us handling your data for a given purpose.</li>
+      </ul>
+      <p><strong>From the app</strong>, without writing to us:</p>
+      <ul>
+        <li>see and change your name and password in Settings → Account;</li>
+        <li>delete lists and expenses;</li>
+        <li>delete your account and all its data with the <strong>"Delete my account"</strong> button (Settings →
+          Account).</li>
+      </ul>
+      <p><strong>By email</strong>: for any other request (for example, changing your email or asking for a copy of
+        your data), write to <a href="mailto:misupernicargua@gmail.com">misupernicargua@gmail.com</a> from your account's email, saying
+        which right you want to use. We will reply within the time set by law.</p>
+      <p>If you think we didn't handle your request properly, you can go to the personal data protection authority
+        established by Law No. 787.</p>
+
+      <h2>8. How we protect your data</h2>
+      <ul>
+        <li>The connection to the app is encrypted (HTTPS).</li>
+        <li>Passwords are stored encrypted with bcrypt, and reset codes are also stored encrypted and expire in 1
+          hour.</li>
+        <li>Sign-in attempts are limited to prevent password guessing.</li>
+        <li>Sessions expire after 30 days.</li>
+        <li>Admin functions are protected with a key.</li>
+        <li>We ask only for the data we need.</li>
+      </ul>
+      <p>No system is 100% secure. If an incident affecting your data ever happens, we will let you know.</p>
+
+      <h2>9. Minors</h2>
+      <p>Mi Súper is not intended for minors. If you are a minor, please don't create an account. If you know a minor
+        gave us their data, write to us and we will delete it.</p>
+
+      <h2>10. Changes to this policy</h2>
+      <p>We may update this policy. The date of the last update is shown at the top of this page. If a change is
+        important, we will announce it inside the app.</p>
+
+      <h2>11. Contact</h2>
+      <p>Responsible person: Equipo técnico de Mi Súper<br>
+        Email: <a href="mailto:misupernicargua@gmail.com">misupernicargua@gmail.com</a><br>
+        City: Managua, Nicaragua</p>
+      <p>See also the <a href="terminos.html">Terms of use</a>.</p>
+    </article>
+  </main>
+
+  <footer class="legal-pie">
+    <a href="terminos.html" data-texto-es="Términos de uso" data-texto-en="Terms of use">Términos de uso</a>
+    <a href="privacidad.html" aria-current="page" data-texto-es="Política de privacidad" data-texto-en="Privacy policy">Política de privacidad</a>
+    <a href="app.html" data-texto-es="Abrir la app" data-texto-en="Open the app">Abrir la app</a>
+  </footer>
+
+  <script src="js/theme.js"></script>
+  <script src="js/legal.js"></script>
+</body>
+
+</html>

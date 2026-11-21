@@ -371,7 +371,72 @@ Object.assign(TRADUCCIONES, {
   'Compra eliminada': 'Purchase deleted',
   'Tu sesión venció. Volvé a entrar.': 'Your session expired. Sign in again.',
   'Necesitás iniciar sesión': 'You need to sign in',
-  'Demasiados intentos. Esperá unos minutos y probá de nuevo.': 'Too many attempts. Wait a few minutes and try again.'
+  'Demasiados intentos. Esperá unos minutos y probá de nuevo.': 'Too many attempts. Wait a few minutes and try again.',
+
+  // Términos, privacidad y avisos de precios
+  'Términos de uso': 'Terms of use',
+  'Política de privacidad': 'Privacy policy',
+  'Acepto los {terminos} y la {privacidad}': 'I accept the {terminos} and the {privacidad}',
+  'Para crear una cuenta tenés que aceptar los Términos de uso y la Política de privacidad': 'To create an account you need to accept the Terms of use and the Privacy policy',
+  'Precios referenciales. El precio válido es el de la tienda.': "Reference prices. The valid price is the store's price.",
+
+  // Precio por unidad
+  'und': 'unit',
+  'Precio por unidad': 'Unit price',
+  'Tu correo (opcional)': 'Your email (optional)',
+
+  // Historial de precios: resumen
+  '30 días': '30 days',
+  '90 días': '90 days',
+  'del último mes': 'over the last month',
+  'de los últimos {n} días': 'over the last {n} days',
+  'Hoy está {monto} más barato que su promedio {periodo} ({promedio}).': "Today it's {monto} cheaper than its average {periodo} ({promedio}).",
+  'Hoy está {monto} más caro que su promedio {periodo} ({promedio}).': "Today it's {monto} more expensive than its average {periodo} ({promedio}).",
+  'Hoy está en su precio de siempre (promedio {periodo}: {promedio}).': "Today it's at its usual price (average {periodo}: {promedio}).",
+  'Mejor precio hoy: {super}.': 'Best price today: {super}.',
+
+  // ¿Hay algo más barato?
+  '¿Hay algo más barato?': 'Is there something cheaper?',
+  'en {super}': 'at {super}',
+  '{n}% menos {medida}': '{n}% less {medida}',
+  'por kilo': 'per kilo',
+  'por litro': 'per liter',
+  'por unidad': 'per unit',
+  'Cambiar': 'Switch',
+  'Cambiar por {nombre}': 'Switch to {nombre}',
+  '🔄 Cambiado por {nombre}': '🔄 Switched to {nombre}',
+
+  // Mis gastos: diferencia y ahorro
+  'Sin compras en {mes} para comparar': 'No purchases in {mes} to compare',
+  '▲ {monto} más que en {mes} (+{pct}%)': '▲ {monto} more than in {mes} (+{pct}%)',
+  '▼ {monto} menos que en {mes} (−{pct}%)': '▼ {monto} less than in {mes} (−{pct}%)',
+  '= Igual que en {mes}': '= Same as in {mes}',
+  '💚 Ahorraste este mes': '💚 Saved this month',
+  'frente al súper más caro': 'vs. the most expensive store',
+  '{monto} en total': '{monto} in total',
+  'Se calcula con las compras que guardes desde ahora': 'Calculated from the purchases you save from now on',
+  'últimos 6 meses': 'last 6 months',
+  'promedio {monto}': 'average {monto}',
+  '💚 Ahorraste {monto}': '💚 You saved {monto}',
+  '💚 Ahorraste {monto} frente a {super}': '💚 You saved {monto} vs. {super}',
+  'el súper más caro': 'the most expensive store',
+  '📅 Gasto guardado. 💚 Ahorraste {monto} frente a {super}.': '📅 Spending saved. 💚 You saved {monto} vs. {super}.',
+
+  // Ofertas de hoy
+  'Ofertas': 'Deals',
+  'de hoy': 'of the day',
+  'Ofertas de hoy': "Today's deals",
+  'Productos con rebaja en las tiendas, del mayor al menor descuento.': 'Products on sale at the stores, from the biggest to the smallest discount.',
+  'Cargando ofertas…': 'Loading deals…',
+  'Todos los súper': 'All stores',
+  'Todas las secciones': 'All sections',
+  'No pudimos cargar las ofertas.': "We couldn't load the deals.",
+  'No hay ofertas aquí en este momento.': 'There are no deals here right now.',
+  'Probá con otro supermercado o sección.': 'Try another store or section.',
+  'Ver más ofertas': 'See more deals',
+  'Ahorrás {monto}': 'You save {monto}',
+  '{n}% de descuento': '{n}% off',
+  'Productos ordenados por precio por kilo, litro o unidad': 'Products sorted by price per kilo, liter or unit'
 });
 TRADUCCIONES.__listo = true;
 /* FIN DICCIONARIO */

@@ -4,6 +4,10 @@ const Lista = require('../models/Lista');
 const Producto = require('../models/Producto');
 const Supermercado = require('../models/Supermercado');
 const ProductoSupermercado = require('../models/ProductoSupermercado');
+const { pausados } = require('../helpers/pausados');
+const { buscarAlternativa, preciosMinimos } = require('../helpers/alternativas');
+const { productosConPrecios } = require('../helpers/precios');
+const mongoose = require('mongoose');
 
 const redondear = n => Math.round(n * 100) / 100;
 
@@ -131,7 +135,9 @@ router.get('/:id/comparar', cargarLista, async (req, res) => {
   const items = lista.items.filter(i => i.producto); // por si se borró algún producto
   // ?supermercados=la-colonia,walmart → comparar solo en "mis supermercados" (Ajustes de la app)
   const elegidos = String(req.query.supermercados || '').split(',').filter(Boolean);
-  const supermercados = await Supermercado.find(elegidos.length ? { slug: { $in: elegidos } } : {}).sort('nombre');
+  const { slugs: slugsPausados } = await pausados();
+  const visibles = elegidos.length ? elegidos.filter(s => !slugsPausados.includes(s)) : null;
+  const supermercados = await Supermercado.find(visibles ? { slug: { $in: visibles } } : { slug: { $nin: slugsPausados } }).sort('nombre');
   const enlaces = await ProductoSupermercado.find({
     producto: { $in: items.map(i => i.producto._id) },
     precioActual: { $gt: 0 },
@@ -198,6 +204,66 @@ router.get('/:id/comparar', cargarLista, async (req, res) => {
       detalle: detalleCombinado
     }
   });
+});
+
+// Los supermercados donde comparar: ?supermercados=la-colonia,walmart (o todos), sin los pausados
+async function supersElegidos(req) {
+  const { slugs: slugsPausados } = await pausados();
+  const elegidos = String(req.query.supermercados || '').split(',').filter(Boolean);
+  const filtro = elegidos.length ? { slug: { $in: elegidos, $nin: slugsPausados } } : { slug: { $nin: slugsPausados } };
+  return Supermercado.find(filtro).select('_id nombre').lean();
+}
+
+// GET /api/listas/:id/alternativas   (opcional: ?supermercados=la-colonia,walmart)
+// "¿Hay algo más barato?": para cada producto de la lista (que no esté marcado como comprado)
+// busca uno equivalente que cueste al menos 5 % menos por kilo, litro o unidad.
+// Responde { [productoId]: { producto (con sus precios), supermercado, precio, antes, ahorro } }
+router.get('/:id/alternativas', cargarLista, async (req, res) => {
+  const lista = await req.lista.populate('items.producto');
+  const supers = await supersElegidos(req);
+  const ids = supers.map(s => s._id);
+  const nombreDe = new Map(supers.map(s => [String(s._id), s.nombre]));
+  const items = lista.items.filter(i => i.producto && !i.comprado);
+  const actuales = await preciosMinimos(items.map(i => i.producto._id), ids);
+
+  const respuesta = {};
+  for (const item of items) {
+    const actual = actuales.get(String(item.producto._id));
+    if (!actual) continue;
+    const alternativa = await buscarAlternativa(item.producto, ids, actual.precio);
+    if (!alternativa) continue;
+    const [conPrecios] = await productosConPrecios([alternativa.producto]);
+    respuesta[item.producto._id] = {
+      producto: conPrecios,
+      supermercado: nombreDe.get(String(alternativa.supermercado)),
+      precio: alternativa.precio, //   precio de la alternativa
+      antes: actual.precio, //          precio más bajo del producto que está en la lista
+      ahorro: Math.round(alternativa.ahorro * 100) // % más barato por kilo, litro o unidad
+    };
+  }
+  res.json(respuesta);
+});
+
+// POST /api/listas/:id/items/:productoId/cambiar  { productoId: 'el nuevo' }
+// Cambia un producto de la lista por otro, con la misma cantidad.
+// Si el nuevo ya estaba en la lista, se suman las cantidades.
+router.post('/:id/items/:productoId/cambiar', cargarLista, async (req, res) => {
+  const lista = req.lista;
+  const item = lista.items.find(i => i.producto.equals(req.params.productoId));
+  if (!item) return res.status(404).json({ error: 'Ese producto no está en la lista' });
+  const nuevo = mongoose.isValidObjectId(req.body.productoId) ? await Producto.findById(req.body.productoId) : null;
+  if (!nuevo) return res.status(404).json({ error: 'Producto no encontrado' });
+
+  const yaEsta = lista.items.find(i => i.producto.equals(nuevo._id));
+  if (yaEsta && yaEsta !== item) {
+    yaEsta.cantidad += item.cantidad;
+    lista.items = lista.items.filter(i => i !== item);
+  } else {
+    item.producto = nuevo._id;
+    item.comprado = false;
+  }
+  await lista.save();
+  res.json(await lista.populate('items.producto'));
 });
 
 module.exports = router;

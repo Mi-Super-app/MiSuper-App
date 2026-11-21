@@ -67,6 +67,21 @@ function fmtC(n) {
   });
 }
 
+/* Precio por kilo, litro o unidad: (130, { cantidad: 2, unidad: 'kg' }) → "C$65/kg"
+   El tamaño lo calcula el servidor a partir del nombre (backend/helpers/tamano.js).
+   Si no se sabe el tamaño, devuelve '' (no se muestra nada). */
+function precioPorUnidad(precio, tamano) {
+  if (!precio || !tamano || !(tamano.cantidad > 0)) return null;
+  return precio / tamano.cantidad;
+}
+function textoPorUnidad(precio, tamano) {
+  const v = precioPorUnidad(precio, tamano);
+  if (v === null) return '';
+  const valor = v >= 100 ? 'C$' + Math.round(v).toLocaleString('en-US') : fmtC(Math.round(v * 100) / 100);
+  const unidad = tamano.unidad === 'kg' ? 'kg' : tamano.unidad === 'l' ? 'L' : t('und');
+  return `${valor}/${unidad}`;
+}
+
 /* Hace seguro un texto antes de meterlo en el HTML */
 function esc(texto) {
   return String(texto ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -116,7 +131,7 @@ const ORDEN_SUPERS = ['La Colonia', 'La Unión', 'Walmart'];
    letra:      'normal' | 'grande'
    supers:     los supermercados que la persona quiere comparar
    presupuesto: el monto que se pone solo al crear una lista
-   orden:      'nombre' | 'precio'  (cómo se ordenan los productos)
+   orden:      'nombre' | 'precio' | 'unidad'  (cómo se ordenan los productos)
    movimiento: 'auto' (lo que diga el celular) | 'reducido'
    El tema (claro / oscuro / automático) va aparte en "misuper-theme". */
 const LS_AJUSTES = 'misuper-ajustes';
@@ -133,7 +148,25 @@ function leerAjustes() {
 const AJUSTES = leerAjustes();
 function guardarAjustes(cambios) {
   Object.assign(AJUSTES, cambios);
-  guardarLS(LS_AJUSTES, JSON.stringify(AJUSTES));
+  // Los pausados que la persona tenía elegidos se siguen guardando: si vuelven, reaparecen
+  guardarLS(LS_AJUSTES, JSON.stringify({ ...AJUSTES, supers: [...AJUSTES.supers, ...PAUSADOS_ELEGIDOS] }));
+}
+
+/* ══════════════ SUPERMERCADOS PAUSADOS ══════════════
+   Si en el servidor se pausa un súper (SUPERS_PAUSADOS en Render), /api/estado
+   lo avisa y aquí se quita de la app: no se muestra ni se compara. */
+const PAUSADOS_ELEGIDOS = [];
+function quitarSupersPausados(nombres) {
+  for (const nombre of nombres || []) {
+    const i = ORDEN_SUPERS.indexOf(nombre);
+    if (i < 0) continue;
+    ORDEN_SUPERS.splice(i, 1);
+    if (AJUSTES.supers.includes(nombre)) PAUSADOS_ELEGIDOS.push(nombre);
+  }
+  AJUSTES.supers = ORDEN_SUPERS.filter(s => AJUSTES.supers.includes(s));
+  if (!AJUSTES.supers.length) AJUSTES.supers = [...ORDEN_SUPERS];
+  // La página de inicio: se ocultan sus tarjetas
+  document.querySelectorAll('[data-super-card]').forEach(el => { el.hidden = !ORDEN_SUPERS.includes(el.dataset.superCard); });
 }
 
 /* ══════════════ IDIOMA ══════════════

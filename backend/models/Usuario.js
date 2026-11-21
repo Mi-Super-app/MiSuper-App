@@ -8,6 +8,13 @@ const usuarioSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true, maxlength: 120 },
     passwordHash: { type: String, required: true },
 
+    // Cuándo aceptó los Términos de uso y la Política de privacidad, y qué versión
+    // (ver helpers/legal.js). Las cuentas creadas antes de 2026-11-21 no lo tienen.
+    terminosAceptados: {
+      fecha: { type: Date },
+      version: { type: String }
+    },
+
     // "Olvidé mi contraseña": guardamos el código del correo CIFRADO (sha256),
     // nunca tal cual, y la hora en que deja de servir.
     resetHash: { type: String, index: true },

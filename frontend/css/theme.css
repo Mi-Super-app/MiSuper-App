@@ -122,6 +122,11 @@
 }
 [data-theme="light"] .g-punto { stroke: #fff; }
 [data-theme="light"] .ley-fila { background: rgba(8,40,60,0.04); }
+[data-theme="light"] .hist-resumen { background: rgba(8,40,60,0.04); }
+[data-theme="light"] .sugerencia { background: rgba(255,179,64,0.14); }
+[data-theme="light"] .sug-titulo { color: #9a5b00; }
+[data-theme="light"] .hist-resumen.baja { background: rgba(29,185,106,0.12); }
+[data-theme="light"] .hist-resumen.sube { background: rgba(255,77,109,0.08); }
 [data-theme="light"] .btn-historial { background: rgba(8,40,60,0.04); }
 
 /* Ajustes */

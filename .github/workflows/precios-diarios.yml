@@ -37,4 +37,20 @@ jobs:
           curl -sf -X POST \
             -H "x-admin-clave: ${{ secrets.ADMIN_CLAVE }}" \
             "${{ secrets.MISUPER_URL }}/api/actualizaciones/ejecutar"
-          echo ""; echo "✅ Actualización pedida. Revisa /api/actualizaciones en unos minutos."
+          echo ""; echo "✅ Actualización pedida."
+
+      # Render gratis duerme el servidor si nadie lo visita en 15 minutos, aunque esté
+      # trabajando. Aquí lo visitamos cada 4 minutos hasta que la actualización termine.
+      # Si aun así se reinicia, al despertar continúa donde se quedó (ver jobs/programador.js).
+      - name: Mantener despierto el servidor hasta que termine
+        run: |
+          for vuelta in $(seq 1 15); do
+            sleep 240
+            ultima=$(curl -s --max-time 90 -H "x-admin-clave: ${{ secrets.ADMIN_CLAVE }}" \
+              "${{ secrets.MISUPER_URL }}/api/actualizaciones" | jq -c '.[0] | {inicio, fin, revisados, errores}' || echo '{}')
+            echo "Minuto $((vuelta * 4)): $ultima"
+            if echo "$ultima" | jq -e '.fin != null' > /dev/null 2>&1; then
+              echo "✅ La actualización terminó"; exit 0
+            fi
+          done
+          echo "⏳ Pasó 1 hora y todavía no termina. Revisa /api/actualizaciones más tarde."

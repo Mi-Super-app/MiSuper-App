@@ -1,4 +1,5 @@
 const ProductoSupermercado = require('../models/ProductoSupermercado');
+const { superVisible } = require('./pausados');
 
 // Recibe una lista de productos y les agrega sus precios en cada súper.
 // Devuelve algo como:
@@ -13,6 +14,7 @@ async function productosConPrecios(productos) {
   const ids = productos.map(p => p._id);
   const enlaces = await ProductoSupermercado.find({
     producto: { $in: ids },
+    supermercado: await superVisible(), // sin los supermercados pausados
     precioActual: { $gt: 0 },
     disponible: true
   })
@@ -48,7 +50,9 @@ async function productosConPrecios(productos) {
       mejor = deEste.reduce((a, b) => (b.precioActual < a.precioActual ? b : a)).supermercado.nombre;
     }
 
-    return { id: p._id, nombre: p.nombre, categoria: p.categoria, unidad: p.unidad, origen: p.origen || 'catalogo', precios, antes, actualizado, mejor };
+    // tamano: { cantidad, unidad: 'kg' | 'l' | 'u' } para mostrar el precio por kilo, litro o unidad (o null)
+    const tamano = p.tamano && p.tamano.cantidad > 0 ? { cantidad: p.tamano.cantidad, unidad: p.tamano.unidad } : null;
+    return { id: p._id, nombre: p.nombre, categoria: p.categoria, unidad: p.unidad, tamano, origen: p.origen || 'catalogo', precios, antes, actualizado, mejor };
   });
 }
 

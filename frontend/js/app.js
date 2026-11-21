@@ -213,6 +213,7 @@ function renderEjemplo() {
 async function cargarPrecios() {
   try {
     const [info, lista] = await Promise.all([api('/api/estado'), api('/api/productos')]);
+    quitarSupersPausados(info.supermercadosPausados);
     productos = lista;
     document.getElementById('stat-productos').textContent = Math.max(info.productos || 0, productos.length).toLocaleString('es-NI');
     const cats = Object.keys(CATEGORIAS).filter(c => productos.some(p => p.categoria === c));
@@ -220,12 +221,6 @@ async function cargarPrecios() {
     renderTabla(cats[0]);
     renderTelefono();
     renderEjemplo();
-    if (info.ultimaActualizacionDePrecios) {
-      const cuando = fechaAmigable(info.ultimaActualizacionDePrecios);
-      document.getElementById('comp-nota').textContent =
-        `Precios actualizados ${cuando}, tomados de las tiendas en línea. Pueden variar en sucursal.`;
-      document.getElementById('badge-texto').textContent = `Precios actualizados ${cuando}`;
-    }
   } catch (error) {
     document.getElementById('comp-table').innerHTML =
       '<div class="comp-cargando">No se pudieron cargar los precios ahora. Probá de nuevo en un momento.</div>';

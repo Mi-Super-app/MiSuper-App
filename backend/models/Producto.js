@@ -35,7 +35,18 @@ const productoSchema = new mongoose.Schema(
     // Identificador del producto importado en su tienda, para no repetirlo:
     //   'vtex:3805'           → mismo producto en La Unión y Walmart (comparten catálogo)
     //   'la-colonia:4100108'  → producto de La Colonia
-    clave: { type: String, unique: true, sparse: true }
+    clave: { type: String, unique: true, sparse: true },
+
+    // Tamaño leído del nombre (ver helpers/tamano.js), para el precio por kilo, litro o unidad:
+    //   { cantidad: 2, unidad: 'kg' }  → C$130 = C$65/kg
+    // Si no se pudo saber, no existe. tamanoVersion = con qué versión de las reglas se leyó.
+    tamano: {
+      cantidad: { type: Number },
+      unidad: { type: String, enum: ['kg', 'l', 'u'] }
+    },
+    tamanoVersion: { type: Number },
+    // Marca (la da la tienda). Sirve para sugerir productos equivalentes de OTRA marca.
+    marca: { type: String }
   },
   { timestamps: true }
 );

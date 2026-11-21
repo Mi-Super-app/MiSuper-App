@@ -21,6 +21,7 @@ const Lista = require('../models/Lista');
 const Compra = require('../models/Compra');
 const { crearToken, requiereUsuario, limiteIntentos } = require('../middleware/auth');
 const { enviarCorreo } = require('../helpers/correo');
+const { VERSION_TERMINOS } = require('../helpers/legal');
 
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const VIGENCIA_LINK = 60 * 60 * 1000; // el link del correo sirve 1 hora
@@ -78,11 +79,20 @@ router.post('/registro', limiteIntentos, async (req, res) => {
   if (!nombre) return res.status(400).json({ error: 'Escribí tu nombre' });
   if (!EMAIL_VALIDO.test(email)) return res.status(400).json({ error: 'Ese correo no parece válido' });
   if (password.length < 8) return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+  // La casilla "Acepto los Términos de uso y la Política de privacidad" es obligatoria
+  if (![true, 'true', 'on'].includes(req.body.aceptaTerminos)) {
+    return res.status(400).json({ error: 'Para crear una cuenta tenés que aceptar los Términos de uso y la Política de privacidad' });
+  }
   if (await Usuario.exists({ email })) {
     return res.status(409).json({ error: 'Ya existe una cuenta con ese correo. Probá "Entrar".' });
   }
 
-  const usuario = await Usuario.create({ nombre, email, passwordHash: await bcrypt.hash(password, 10) });
+  const usuario = await Usuario.create({
+    nombre,
+    email,
+    passwordHash: await bcrypt.hash(password, 10),
+    terminosAceptados: { fecha: new Date(), version: VERSION_TERMINOS }
+  });
   const adoptadas = await adoptarListas(usuario._id, req.dispositivo);
   res.status(201).json({ token: crearToken(usuario), usuario, listasAgregadas: adoptadas });
 });

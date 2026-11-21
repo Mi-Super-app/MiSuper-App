@@ -1,6 +1,7 @@
 // HISTORIAL DE GASTOS
-//   GET    /api/compras         → mis compras de los últimos 2 años + total de cada mes
-//   POST   /api/compras         { nombre, supermercado, total, presupuesto?, cantidadProductos?, fecha?, listaId? }
+//   GET    /api/compras         → mis compras de los últimos 2 años + total y ahorro de cada mes
+//   POST   /api/compras         { nombre, supermercado, total, presupuesto?, cantidadProductos?, fecha?, listaId?,
+//                                  ahorro?, comparadoCon? }  ← ahorro frente al súper más caro
 //   DELETE /api/compras/:id
 //
 // Igual que las listas: son de la cuenta (si hay sesión) o de este dispositivo.
@@ -21,6 +22,14 @@ function claveMes(fecha) {
   return `${local.getUTCFullYear()}-${String(local.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
+// El ahorro lo calcula la app con la comparación de la lista; aquí solo se revisa que tenga sentido
+function ahorroValido(body) {
+  const ahorro = Number(body.ahorro);
+  if (body.ahorro === undefined || body.ahorro === null || !(ahorro >= 0) || ahorro > 10000000) return {};
+  const comparadoCon = String(body.comparadoCon || '').trim().slice(0, 40);
+  return { ahorro: Math.round(ahorro * 100) / 100, ...(comparadoCon ? { comparadoCon } : {}) };
+}
+
 router.get('/', async (req, res) => {
   const filtro = filtroDueno(req);
   if (!filtro) return res.json({ meses: [], compras: [] });
@@ -32,9 +41,13 @@ router.get('/', async (req, res) => {
   const porMes = new Map();
   for (const c of compras) {
     const mes = claveMes(c.fecha);
-    const m = porMes.get(mes) || { mes, total: 0, compras: 0 };
+    const m = porMes.get(mes) || { mes, total: 0, compras: 0, ahorro: 0, conAhorro: 0 };
     m.total = Math.round((m.total + c.total) * 100) / 100;
     m.compras++;
+    if (typeof c.ahorro === 'number') {
+      m.ahorro = Math.round((m.ahorro + c.ahorro) * 100) / 100;
+      m.conAhorro++; // cuántas compras de ese mes tienen el dato
+    }
     porMes.set(mes, m);
   }
   res.json({ meses: [...porMes.values()].sort((a, b) => a.mes.localeCompare(b.mes)), compras });
@@ -57,6 +70,7 @@ router.post('/', async (req, res) => {
     total,
     presupuesto: Number(req.body.presupuesto) || undefined,
     cantidadProductos: Number(req.body.cantidadProductos) || 0,
+    ...ahorroValido(req.body),
     fecha,
     lista: req.body.listaId || undefined,
     ...(req.usuarioId ? { usuario: req.usuarioId } : { dispositivo: req.dispositivo })

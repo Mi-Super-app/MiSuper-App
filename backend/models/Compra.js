@@ -11,6 +11,11 @@ const compraSchema = new mongoose.Schema(
     total: { type: Number, required: true, min: 0, max: 10000000 },
     presupuesto: { type: Number, min: 0 },
     cantidadProductos: { type: Number, min: 0, default: 0 },
+    // Cuánto se ahorró comprando ahí en vez de en el súper más caro (con los precios de ese día).
+    // Ej: la lista costaba C$1,200 en Walmart y C$1,050 en La Unión → ahorro: 150, comparadoCon: 'Walmart'.
+    // Las compras guardadas antes de esto no lo tienen.
+    ahorro: { type: Number, min: 0, max: 10000000 },
+    comparadoCon: { type: String, trim: true, maxlength: 40 },
     fecha: { type: Date, default: Date.now, index: true },
     lista: { type: mongoose.Schema.Types.ObjectId, ref: 'Lista' },
 

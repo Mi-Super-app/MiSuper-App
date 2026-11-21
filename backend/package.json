@@ -10,7 +10,8 @@
     "precios": "node jobs/actualizarPrecios.js",
     "buscar": "node scripts/buscar.js",
     "probar": "node scripts/probar.js",
-    "catalogo": "node scripts/catalogo.js"
+    "catalogo": "node scripts/catalogo.js",
+    "tamanos": "node jobs/tamanos.js"
   },
   "keywords": [],
   "author": "",

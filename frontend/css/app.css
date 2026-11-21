@@ -110,6 +110,7 @@ button { cursor: pointer; }
 .app-main { position: relative; z-index: 1; overflow-x: clip; padding: 16px 16px calc(var(--tabbar-h) + 28px + env(safe-area-inset-bottom)); max-width: 1400px; margin: 0 auto; }
 .vista { display: none; }
 body[data-vista="productos"] #vista-productos,
+body[data-vista="ofertas"] #vista-ofertas,
 body[data-vista="lista"] #vista-lista,
 body[data-vista="comparar"] #vista-comparar,
 body[data-vista="gastos"] #vista-gastos,
@@ -141,13 +142,13 @@ body[data-vista="ajustes"] #vista-ajustes { display: block; }
 .tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
   height: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom);
-  display: grid; grid-template-columns: repeat(5, 1fr);
+  display: grid; grid-template-columns: repeat(6, 1fr);
   background: rgba(8,16,28,0.92); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
   border-top: 1px solid rgba(255,255,255,0.08);
 }
 .tab {
   background: none; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-  font-size: 12px; font-weight: 800; color: var(--text-3); transition: color .2s;
+  font-size: 11px; font-weight: 800; color: var(--text-3); transition: color .2s; min-width: 0; padding: 0 1px;
 }
 .tab-ico { position: relative; font-size: 22px; line-height: 1; filter: grayscale(.6); transition: transform .2s, filter .2s; }
 .tab.activa { color: var(--mint); }
@@ -174,6 +175,22 @@ body[data-vista="ajustes"] #vista-ajustes { display: block; }
 }
 .chip.activa, .chip:hover { background: rgba(29,185,106,0.15); border-color: rgba(29,185,106,0.4); color: var(--mint); }
 
+/* ── OFERTAS DE HOY ── */
+.ofertas-cats { margin-top: 8px; }
+.oferta-card .prod-top { align-items: flex-start; }
+.oferta-tag {
+  flex-shrink: 0; align-self: flex-start; padding: 4px 9px; border-radius: 10px;
+  background: linear-gradient(135deg, #ff4d6d, #ff8a3d); color: #fff;
+  font-family: 'Space Mono'; font-size: 13px; font-weight: 700; letter-spacing: -.3px;
+  box-shadow: 0 4px 14px rgba(255,77,109,0.3);
+}
+.oferta-precios { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: rgba(29,185,106,0.1); border: 1px solid rgba(29,185,106,0.3); }
+.oferta-precio { font-family: 'Space Mono'; font-weight: 700; font-size: 20px; color: var(--mint); letter-spacing: -.5px; }
+.oferta-antes { font-family: 'Space Mono'; font-size: 13px; color: var(--text-3); text-decoration: line-through; }
+.oferta-precios .pc-unidad { margin: 0; }
+.oferta-ahorro { margin-left: auto; font-size: 12px; font-weight: 800; color: var(--mint); }
+.oferta-super { font-weight: 800; color: var(--text-2); }
+
 /* ── TARJETAS DE PRODUCTO ── */
 .prod-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
 .prod-card {
@@ -198,6 +215,8 @@ body[data-vista="ajustes"] #vista-ajustes { display: block; }
 }
 .pc-super { font-size: 11px; font-weight: 800; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pc-valor { font-family: 'Space Mono'; font-weight: 700; font-size: 15px; letter-spacing: -.3px; }
+.pc-unidad { font-family: 'Space Mono'; font-size: 10px; font-weight: 700; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: -2px; }
+.precio-celda.mejor .pc-unidad { color: var(--mint); opacity: .8; }
 .pc-extra { font-size: 10px; font-weight: 800; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .precio-celda.mejor { background: rgba(29,185,106,0.13); border-color: rgba(29,185,106,0.4); }
 .precio-celda.mejor .pc-valor, .precio-celda.mejor .pc-extra { color: var(--mint); }
@@ -256,6 +275,21 @@ body[data-vista="ajustes"] #vista-ajustes { display: block; }
   padding: 10px 12px; border-radius: 16px; background: var(--glass); border: 1px solid var(--border);
 }
 .item.comprado { opacity: .55; }
+/* "¿Hay algo más barato?" debajo de un producto de la lista */
+.sugerencia {
+  order: 9; grid-column: 1 / -1; display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: 12px; background: rgba(255,179,64,0.1); border: 1px dashed rgba(255,179,64,0.45);
+}
+.sug-ico { font-size: 18px; }
+.sug-texto { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; font-size: 12px; line-height: 1.35; color: var(--text-2); }
+.sug-texto b { color: var(--text-1); }
+.sug-titulo { font-size: 11px; font-weight: 900; letter-spacing: .3px; text-transform: uppercase; color: var(--amber); }
+.sug-ahorro { font-weight: 800; color: var(--mint); }
+.btn-cambiar {
+  flex-shrink: 0; padding: 8px 12px; border-radius: 10px; border: none; font-weight: 900; font-size: 13px;
+  background: linear-gradient(135deg, var(--verde-dark), var(--azul)); color: #fff;
+}
+.btn-cambiar:active { transform: scale(.97); }
 .item.comprado .item-nombre { text-decoration: line-through; }
 .check {
   width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(29,185,106,0.6); background: transparent;
@@ -294,6 +328,17 @@ body[data-vista="ajustes"] #vista-ajustes { display: block; }
 .ruta-item { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--border); color: var(--text-2); }
 .ruta-item span:last-child { font-family: 'Space Mono'; color: var(--text-1); white-space: nowrap; }
 .aviso-precios { font-size: 11px; color: var(--text-3); text-align: center; margin-top: 16px; line-height: 1.5; }
+.aviso-precios b { color: var(--text-2); }
+/* Aviso corto debajo de las secciones, en la vista de productos */
+.aviso-corto { font-size: 11px; font-weight: 700; color: var(--text-3); margin-top: 8px; }
+/* Casilla "Acepto los Términos…" al crear una cuenta */
+.ver-pass.acepto { align-items: flex-start; line-height: 1.45; margin: 2px 0 16px; }
+.ver-pass.acepto input { margin-top: 2px; flex-shrink: 0; }
+.ver-pass.acepto a { color: var(--mint); font-weight: 800; }
+/* Ajustes → Acerca de: enlaces legales */
+.aj-legal { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 12px 0 2px; border-top: 1px solid var(--border); font-size: 13px; }
+.aj-legal a { color: var(--mint); font-weight: 800; text-decoration: none; }
+.aj-legal a:hover { text-decoration: underline; }
 
 /* ── HOJA EMERGENTE (abajo en celular, centrada en computadora) ── */
 .fondo-hoja { position: fixed; inset: 0; z-index: 100; background: rgba(2,8,18,0.6); backdrop-filter: blur(6px); display: flex; align-items: flex-end; justify-content: center; animation: fundido .2s; }
@@ -362,7 +407,7 @@ body[data-vista="ajustes"] #vista-ajustes { display: block; }
     background: rgba(10,20,35,0.55); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--border); border-radius: 24px; padding: 18px;
   }
-  #vista-productos, #vista-comparar, #vista-gastos, #vista-ajustes { grid-column: 1; grid-row: 1; }
+  #vista-productos, #vista-ofertas, #vista-comparar, #vista-gastos, #vista-ajustes { grid-column: 1; grid-row: 1; }
   body[data-vista="lista"] #vista-productos { display: block; }
   .prod-grid { grid-template-columns: repeat(2, 1fr); }
   .comp-lista { grid-template-columns: repeat(3, 1fr); }
@@ -394,6 +439,12 @@ select.campo option { color: #0b1626; }
 .tile-valor { font-family: 'Bebas Neue'; font-size: 30px; line-height: 1.05; letter-spacing: .02em; color: var(--text-1); }
 .tile.destacado .tile-valor { font-size: 40px; }
 .tile-nota { font-size: 12px; color: var(--text-3); font-weight: 700; }
+/* Diferencia con el mes pasado y ahorro */
+.tile-dif { font-size: 13px; font-weight: 800; color: var(--text-2); margin: 2px 0; }
+.tile-dif.sube { color: var(--red); }
+.tile-dif.baja { color: var(--mint); }
+.tile-valor.ahorro { color: var(--mint); }
+.grafica-sub { font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 700; color: var(--text-3); letter-spacing: 0; text-transform: none; margin-left: 6px; }
 
 /* Gráficas */
 .grafica-tarjeta { margin-bottom: 14px; }
@@ -437,6 +488,14 @@ select.campo option { color: #0b1626; }
 .hist-sub { margin-bottom: 10px !important; }
 .hist-rangos { margin: 0 0 12px; padding: 0; flex-wrap: wrap; overflow: visible; }
 .hist-grafica { min-height: 180px; margin-bottom: 8px; }
+/* Frase de resumen del historial: "Hoy está C$8 más barato que su promedio del mes" */
+.hist-resumen { display: flex; gap: 8px; align-items: flex-start; margin: 4px 0 12px; padding: 10px 12px; border-radius: 12px; font-size: 14px; line-height: 1.45; background: rgba(255,255,255,0.05); border: 1px solid var(--border); }
+.hist-resumen b { display: block; margin-top: 2px; font-size: 12px; color: var(--text-2); }
+.hist-resumen.baja { background: rgba(29,185,106,0.12); border-color: rgba(29,185,106,0.35); }
+.hist-resumen.sube { background: rgba(255,77,109,0.1); border-color: rgba(255,77,109,0.3); }
+/* Tocar el nombre de un producto abre su historial de precios */
+.prod-info[data-accion="historial"] { cursor: pointer; }
+.prod-info[data-accion="historial"]:hover .prod-nombre { text-decoration: underline; text-decoration-color: var(--text-3); }
 .leyenda { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 10px; }
 .ley-fila { display: grid; grid-template-columns: 14px 1fr auto; grid-template-areas: "c n p" ". d d"; column-gap: 8px; align-items: center; padding: 8px 10px; border-radius: 12px; background: rgba(255,255,255,0.04); }
 .ley-color { grid-area: c; width: 14px; height: 4px; border-radius: 2px; }

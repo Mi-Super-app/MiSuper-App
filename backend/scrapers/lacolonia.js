@@ -16,20 +16,15 @@
 
 const SITIO = 'https://lacolonia.com.ni';
 
+const { pedir } = require('./utils');
+
 async function descargarPagina(url) {
-  const respuesta = await fetch(url, {
-    headers: {
-      'User-Agent': 'MiSuperApp/1.0 (comparador de precios; consulta 1 vez al dia)',
-      Accept: 'text/html'
-    },
-    signal: AbortSignal.timeout(20000)
-  });
-  if (!respuesta.ok) {
-    throw new Error(
-      respuesta.status === 404 ? 'El producto ya no existe en La Colonia' : `La tienda respondió con error ${respuesta.status}`
-    );
+  try {
+    return await (await pedir(url, { tipo: 'text/html' })).text();
+  } catch (error) {
+    if (error.status === 404) throw new Error('El producto ya no existe en La Colonia');
+    throw error;
   }
-  return respuesta.text();
 }
 
 // Busca el bloque JSON-LD de tipo "Product" dentro del HTML

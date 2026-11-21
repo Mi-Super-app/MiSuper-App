@@ -325,6 +325,39 @@ sin que tengas que hacer nada.
 
 ---
 
+## Precio por kilo, litro o unidad
+
+- El tamaño de cada producto se lee de su **nombre** (`helpers/tamano.js`): "2 kg", "900 ml",
+  "3 x 90 g", "40 uds", "Precio indicado por libra"… y se guarda en `Producto.tamano`.
+- Se calcula solo al encender el servidor y al final de cada actualización de precios.
+  A mano: `npm run tamanos`.
+- Si no se puede saber el tamaño (más o menos 1 de cada 6 productos), no se muestra nada.
+- Si mejoras las reglas, sube `VERSION_TAMANO` en `helpers/tamano.js`: se vuelven a leer todos.
+
+---
+
+## Cómo se cuida a los supermercados (actualización diaria)
+
+- **Pocas consultas:** el catálogo se pide por categorías (hasta 50 productos por
+  consulta en La Unión y Walmart; una página por categoría en La Colonia), con una
+  pausa de 1.5 a 3 segundos entre cada consulta.
+- **robots.txt:** antes de cada consulta, `scrapers/robots.js` revisa el robots.txt de
+  la tienda. Si la ruta está prohibida (La Colonia prohíbe `/api/` y `/buscar`), la
+  consulta no se hace y queda anotada como error.
+- **User-Agent honesto:** todas las consultas dicen quiénes somos
+  (`MiSuperApp/1.0 (comparador de precios; consulta 1 vez al dia)`).
+- **Historial:** `HistorialPrecio` solo guarda una fila cuando un precio cambia.
+- **Si Render se reinicia a medias:** cada categoría guardada queda anotada en
+  `progreso` (se ve en `GET /api/actualizaciones`). Al volver a arrancar, el servidor
+  continúa donde se quedó. El trabajo de GitHub Actions visita el servidor cada 4
+  minutos hasta que termina, para que Render no lo duerma.
+- **Pausar un supermercado:** en Render → Environment, agrega
+  `SUPERS_PAUSADOS=walmart` (o varios: `walmart,la-union`). Ese súper deja de
+  consultarse y desaparece de la app. Sus datos no se borran: si quitas la variable,
+  vuelve a aparecer.
+
+---
+
 ## "Olvidé mi contraseña": configurar el correo
 
 Para que la app pueda mandar el correo de recuperación, agrega estas variables en tu
@@ -356,11 +389,12 @@ contraseña nueva y queda dentro de su cuenta.
 | GET | `/` | Estado de la API y última actualización de precios |
 | GET | `/api/supermercados` | Los 3 supermercados |
 | GET | `/api/supermercados/:slug/productos` | Sección de un súper (`la-colonia`, `la-union`, `walmart`). Filtros: `?categoria=lacteos&pagina=2&limite=200` |
-| GET | `/api/productos` | Sin filtros: los productos del catálogo base. Con filtros busca en **todos**: `?q=texto`, `?categoria=lacteos`, `?supermercado=walmart,la-union`, `?ids=ID1,ID2`, `?orden=precio` (más barato primero), `?pagina=2&limite=60` (total en el encabezado `X-Total`) |
+| GET | `/api/productos` | Sin filtros: los productos del catálogo base. Con filtros busca en **todos**: `?q=texto`, `?categoria=lacteos`, `?supermercado=walmart,la-union`, `?ids=ID1,ID2`, `?orden=precio` (más barato primero), `?orden=unidad` (más barato por kilo, litro o unidad; agrupado por medida), `?pagina=2&limite=60` (total en el encabezado `X-Total`) |
 | GET | `/api/productos/resumen` | Cuántos productos hay en cada sección |
 | GET | `/api/productos/categorias` | Categorías válidas |
 | GET | `/api/productos/:id` | Un producto con sus precios |
 | GET | `/api/productos/:id/historial` | Cómo ha cambiado su precio |
+| GET | `/api/ofertas` | **Ofertas de hoy**: precio de hoy menor que el normal, del mayor al menor descuento. Filtros: `?supermercado=walmart,la-union`, `?categoria=lacteos`, `?pagina=2&limite=30`. Trae `categorias` (cuántas ofertas por sección) |
 | GET | `/api/precios/:categoria` | Productos de una categoría (de 200 en 200: `?pagina=2`) |
 | GET | `/api/listas` | Todas las listas |
 | POST | `/api/listas` | Crear lista `{ "nombre": "...", "presupuesto": 1000 }` |
@@ -371,6 +405,9 @@ contraseña nueva y queda dentro de su cuenta.
 | PUT | `/api/listas/:id/items/:productoId` | Cambiar cantidad `{ "cantidad": 3 }` |
 | DELETE | `/api/listas/:id/items/:productoId` | Quitar producto |
 | GET | `/api/listas/:id/comparar` | **Total en cada súper vs. presupuesto**. Solo algunos súper: `?supermercados=la-colonia,walmart` |
+| POST | `/api/auth/registro` | Crear cuenta `{ "nombre", "email", "password", "aceptaTerminos": true }` (sin `aceptaTerminos` responde 400; guarda la fecha y la versión aceptada, ver `helpers/legal.js`) |
+| GET | `/api/listas/:id/alternativas` | **¿Hay algo más barato?**: para cada producto (no comprado), uno equivalente de otra marca que cueste al menos 5 % menos por kilo, litro o unidad. Opcional: `?supermercados=la-colonia,walmart` (ver `helpers/alternativas.js`) |
+| POST | `/api/listas/:id/items/:productoId/cambiar` | Cambia un producto de la lista por otro, con la misma cantidad `{ "productoId": "el nuevo" }` |
 | PUT | `/api/auth/yo` | Cambiar mi nombre `{ "nombre": "..." }` |
 | PUT | `/api/auth/password` | Cambiar contraseña `{ "actual": "...", "nueva": "..." }` |
 | DELETE | `/api/auth/yo` | Eliminar mi cuenta, listas y gastos `{ "actual": "..." }` |
