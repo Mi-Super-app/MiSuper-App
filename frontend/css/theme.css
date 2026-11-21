@@ -1,0 +1,111 @@
+/* ══════════════════════════════════════════════
+   INTERRUPTOR DE TEMA + MODO CLARO
+   (el modo oscuro es el diseño original de style.css)
+   ══════════════════════════════════════════════ */
+
+/* ── Interruptor ☀️/🌙 ── */
+.theme-toggle {
+  position: relative; width: 58px; height: 30px; flex-shrink: 0;
+  border-radius: 30px; cursor: pointer; padding: 0 7px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16);
+  transition: background .25s, border-color .25s;
+}
+.theme-toggle .tt-icon { font-size: 13px; line-height: 1; z-index: 1; }
+.theme-toggle .tt-knob {
+  position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--mint), var(--cyan));
+  box-shadow: 0 2px 8px rgba(0,0,0,.3); transition: transform .25s ease;
+}
+.theme-toggle[aria-checked="true"] .tt-knob { transform: translateX(28px); }
+.theme-toggle:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
+
+/* ══════════════ MODO CLARO ══════════════ */
+[data-theme="light"] {
+  --verde:      #0f9a57;
+  --verde-dark: #0b7a44;
+  --mint:       #0b9e55;
+  --cyan:       #0a86b8;
+  --amber:      #c77700;
+  --red:        #d6304f;
+  --text-1:     rgba(8,24,38,0.92);
+  --text-2:     rgba(8,24,38,0.62);
+  --text-3:     rgba(8,24,38,0.42);
+  --border:     rgba(8,40,60,0.12);
+  --surface:    rgba(255,255,255,0.75);
+  --glass:      rgba(255,255,255,0.7);
+}
+[data-theme="light"] body {
+  background: linear-gradient(135deg, #e3f7ec 0%, #eef5fc 55%, #e4eefa 100%);
+  background-attachment: fixed;
+}
+[data-theme="light"] .blob { opacity: .55; }
+[data-theme="light"] ::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+
+/* Barra superior y superficies "de vidrio" */
+[data-theme="light"] nav,
+[data-theme="light"] .app-header { background: rgba(255,255,255,0.72); border-bottom-color: var(--border); }
+[data-theme="light"] nav.scrolled { background: rgba(255,255,255,0.92); }
+[data-theme="light"] .nav-wordmark .nm-mi,
+[data-theme="light"] .hero-title .ht-mi,
+[data-theme="light"] .fm,
+[data-theme="light"] .brand-mi { color: rgba(8,24,38,0.4); }
+[data-theme="light"] .theme-toggle { background: rgba(8,40,60,0.06); border-color: var(--border); }
+
+[data-theme="light"] .feat-card,
+[data-theme="light"] .super-card,
+[data-theme="light"] .step-item,
+[data-theme="light"] .faq-item,
+[data-theme="light"] .ejemplo-card,
+[data-theme="light"] .float-pill { background: rgba(255,255,255,0.75); border-color: var(--border); box-shadow: 0 6px 24px rgba(8,40,60,0.06); }
+[data-theme="light"] .sim-card,
+[data-theme="light"] .comp-table { background: rgba(255,255,255,0.82); border-color: var(--border); }
+[data-theme="light"] .comp-head { background: rgba(8,40,60,0.04); border-bottom-color: var(--border); }
+[data-theme="light"] .comp-row { border-bottom-color: var(--border); }
+[data-theme="light"] .comp-row:hover { background: rgba(8,40,60,0.03); }
+[data-theme="light"] .comp-tab { border-color: var(--border); }
+[data-theme="light"] .comp-price.high { color: #c2410c; }
+[data-theme="light"] .btn-secondary { background: rgba(255,255,255,0.7); border-color: var(--border); }
+[data-theme="light"] .btn-secondary:hover { background: #fff; }
+[data-theme="light"] .divider hr { border-top-color: var(--border); }
+[data-theme="light"] .sim-slider { background: linear-gradient(to right, var(--verde-dark) 0%, var(--verde-dark) var(--pct,50%), rgba(8,40,60,0.12) var(--pct,50%)); }
+[data-theme="light"] .sim-bar-track { background: rgba(8,40,60,0.08); }
+[data-theme="light"] #features,
+[data-theme="light"] #simulador,
+[data-theme="light"] #supermercados,
+[data-theme="light"] #como-funciona,
+[data-theme="light"] #faq,
+[data-theme="light"] #cta-final { background: rgba(255,255,255,0.28); }
+[data-theme="light"] footer { background: rgba(255,255,255,0.7); border-top-color: var(--border); }
+[data-theme="light"] .menu-movil { background: rgba(255,255,255,0.97); }
+[data-theme="light"] .menu-btn span { background: var(--text-1); }
+
+/* El celular de muestra se queda oscuro (parece una pantalla real) */
+[data-theme="light"] .phone-frame { background: #0b1626; }
+
+/* App */
+[data-theme="light"] .tabbar { background: rgba(255,255,255,0.94); border-top-color: var(--border); }
+[data-theme="light"] .tarjeta,
+[data-theme="light"] .prod-card,
+[data-theme="light"] .item,
+[data-theme="light"] .panel-lista,
+[data-theme="light"] .comp-super,
+[data-theme="light"] .hoja { background: rgba(255,255,255,0.86); border-color: var(--border); box-shadow: 0 6px 24px rgba(8,40,60,0.06); }
+[data-theme="light"] .campo,
+[data-theme="light"] .buscador,
+[data-theme="light"] .selector-lista select { background: #fff; border-color: var(--border); color: var(--text-1); }
+[data-theme="light"] .buscador input { background: transparent; }
+[data-theme="light"] #vista-lista { background: rgba(255,255,255,0.6); }
+[data-theme="light"] .res-tarjeta { background: linear-gradient(135deg, rgba(15,154,87,0.1), rgba(10,134,184,0.1)); border-color: rgba(15,154,87,0.3); }
+[data-theme="light"] .hoja { background: #fff; }
+[data-theme="light"] .hoja::before { background: rgba(8,24,38,0.2); }
+[data-theme="light"] .btn-icono { background: #fff; }
+[data-theme="light"] .prod-emoji { background: rgba(15,154,87,0.1); }
+[data-theme="light"] .chip { border-color: var(--border); background: rgba(255,255,255,0.6); }
+[data-theme="light"] html, html[data-theme="light"] { background: #eaf4f6; }
+[data-theme="light"] .precio-celda { background: rgba(8,40,60,0.04); }
+[data-theme="light"] .stepper { background: rgba(8,40,60,0.05); border-color: var(--border); }
+[data-theme="light"] .barra-pres { background: rgba(8,40,60,0.1); }
+[data-theme="light"] .btn-ghost { background: rgba(8,40,60,0.05); border-color: var(--border); }
+[data-theme="light"] .fondo-hoja { background: rgba(8,24,38,0.35); }
+[data-theme="light"] .toast { background: #0b1626; color: #fff; }

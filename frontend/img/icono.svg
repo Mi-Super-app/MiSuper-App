@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 88" fill="none">
+  <defs>
+    <linearGradient id="fondo" x1="0" y1="0" x2="88" y2="88" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0d4f3c"/>
+      <stop offset="100%" stop-color="#0a2a4a"/>
+    </linearGradient>
+    <linearGradient id="ng1" x1="4" y1="30" x2="84" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22e87a"/>
+      <stop offset="100%" stop-color="#0b9e55"/>
+    </linearGradient>
+  </defs>
+  <rect width="88" height="88" rx="20" fill="url(#fondo)"/>
+  <g transform="translate(9 7) scale(0.8)">
+    <rect x="8" y="52" width="72" height="22" rx="5" fill="#0a6b3f" opacity="0.6"/>
+    <rect x="6" y="47" width="72" height="22" rx="5" fill="#0d8a52" opacity="0.7"/>
+    <rect x="4" y="30" width="80" height="28" rx="6" fill="url(#ng1)"/>
+    <rect x="4" y="37" width="80" height="2" fill="rgba(255,255,255,0.12)"/>
+    <rect x="4" y="49" width="80" height="2" fill="rgba(255,255,255,0.1)"/>
+    <circle cx="44" cy="44" r="9" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
+    <circle cx="44" cy="44" r="5" fill="rgba(255,255,255,0.2)"/>
+    <text x="44" y="48.5" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="10" fill="white" opacity="0.9">$</text>
+    <rect x="10" y="35" width="14" height="8" rx="2" fill="rgba(255,255,255,0.15)"/>
+    <rect x="64" y="35" width="14" height="8" rx="2" fill="rgba(255,255,255,0.15)"/>
+  </g>
+</svg>

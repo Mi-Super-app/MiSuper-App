@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Mi Súper · Mi lista</title>
+  <meta name="description" content="Armá tu lista de compras, poné tu presupuesto y mirá en qué supermercado te sale más barato.">
+  <meta name="theme-color" content="#0a1a2c">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="img/icono.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="img/icono-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Mi Súper">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <script>
+    /* Aplica el tema guardado antes de pintar la página (evita el parpadeo) */
+    (function () {
+      var t = 'dark';
+      try { var s = localStorage.getItem('misuper-theme'); if (s === 'light' || s === 'dark') t = s; } catch (e) { }
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+</head>
+
+<body data-vista="productos">
+
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+
+  <!-- ── BARRA SUPERIOR ── -->
+  <header class="app-header">
+    <a class="brand" href="index.html" aria-label="Mi Súper, ir a la página de inicio">
+      <img src="img/icono.svg" alt="" width="34" height="34">
+      <span class="brand-text"><span class="brand-mi">MI</span><span class="brand-super">SÚPER</span></span>
+    </a>
+
+    <!-- Pestañas (solo en computadora) -->
+    <div class="tabs-escritorio" role="tablist">
+      <button class="tab-esc" data-accion="ir" data-vista="productos" role="tab">🛒 Productos</button>
+      <button class="tab-esc" data-accion="ir" data-vista="comparar" role="tab">📊 Comparar</button>
+    </div>
+
+    <div class="header-der">
+      <span class="actualizado" id="actualizado" title="Los precios se actualizan solos todos los días">Cargando precios…</span>
+      <button class="theme-toggle" type="button" role="switch" aria-checked="true" aria-label="Cambiar a modo claro" title="Cambiar tema">
+        <span class="tt-icon" aria-hidden="true">☀️</span>
+        <span class="tt-icon" aria-hidden="true">🌙</span>
+        <span class="tt-knob" aria-hidden="true"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Aviso si no hay conexión con el servidor -->
+  <div class="aviso" id="aviso" hidden>
+    <span>⚠️ No se pudo conectar con Mi Súper. Revisá tu internet.</span>
+    <button class="btn-ghost btn-sm" data-accion="reintentar">Reintentar</button>
+  </div>
+
+  <main class="app-main">
+
+    <!-- ══ PRODUCTOS ══ -->
+    <section class="vista" id="vista-productos" aria-label="Productos">
+      <div class="vista-cabeza">
+        <h1 class="titulo">Productos <span>con precios de hoy</span></h1>
+        <label class="buscador">
+          <span aria-hidden="true">🔍</span>
+          <input type="search" id="buscar" placeholder="Buscar: leche, arroz, café…" autocomplete="off" aria-label="Buscar producto">
+        </label>
+        <div class="chips" id="chips" role="tablist" aria-label="Categorías"></div>
+      </div>
+      <div class="prod-grid" id="prod-grid">
+        <div class="cargando">Cargando productos…</div>
+      </div>
+    </section>
+
+    <!-- ══ COMPARAR ══ -->
+    <section class="vista" id="vista-comparar" aria-label="Comparar supermercados">
+      <div class="vista-cabeza">
+        <h1 class="titulo">¿Dónde te <span>conviene comprar?</span></h1>
+        <p class="sub" id="comparar-sub">El total de tu lista en cada supermercado.</p>
+      </div>
+      <div id="comparar-cuerpo"></div>
+    </section>
+
+    <!-- ══ MI LISTA (panel lateral en computadora) ══ -->
+    <aside class="vista panel-lista" id="vista-lista" aria-label="Mi lista">
+      <div class="lista-cabeza">
+        <label class="selector-lista">
+          <span class="sr-only">Lista activa</span>
+          <select id="selector-lista" aria-label="Elegir lista"></select>
+        </label>
+        <button class="btn-icono" data-accion="nueva-lista" title="Nueva lista" aria-label="Nueva lista">＋</button>
+        <button class="btn-icono" data-accion="opciones-lista" title="Opciones de la lista" aria-label="Opciones de la lista">⋯</button>
+      </div>
+
+      <div class="resumen" id="resumen"></div>
+      <div class="items" id="items"></div>
+
+      <button class="btn-primary btn-bloque solo-movil" data-accion="ir" data-vista="comparar" id="btn-ver-comparar">📊 Ver en qué súper me conviene</button>
+    </aside>
+  </main>
+
+  <!-- ── BARRA INFERIOR (solo celular) ── -->
+  <div class="tabbar" role="tablist" aria-label="Secciones">
+    <button class="tab" data-accion="ir" data-vista="productos" role="tab"><span class="tab-ico">🛒</span>Productos</button>
+    <button class="tab" data-accion="ir" data-vista="lista" role="tab"><span class="tab-ico">📝<span class="badge" id="badge" hidden>0</span></span>Mi lista</button>
+    <button class="tab" data-accion="ir" data-vista="comparar" role="tab"><span class="tab-ico">📊</span>Comparar</button>
+  </div>
+
+  <!-- Hoja emergente (formularios y menús) -->
+  <div class="fondo-hoja" id="fondo-hoja" hidden>
+    <div class="hoja" id="hoja" role="dialog" aria-modal="true"></div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/miapp.js"></script>
+</body>
+
+</html>

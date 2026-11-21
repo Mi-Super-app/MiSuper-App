@@ -5,11 +5,22 @@ const Producto = require('../models/Producto');
 const Supermercado = require('../models/Supermercado');
 const ProductoSupermercado = require('../models/ProductoSupermercado');
 
+const mongoose = require('mongoose');
+
 const redondear = n => Math.round(n * 100) / 100;
 
-// GET /api/listas → todas las listas
+// GET /api/listas?ids=ID1,ID2 → solo las listas pedidas
+// (cada celular/computadora guarda los ids de SUS listas y solo pide esas)
+// GET /api/listas            → todas (útil para pruebas)
 router.get('/', async (req, res) => {
-  const listas = await Lista.find().sort('-updatedAt');
+  const filtro = {};
+  if (req.query.ids !== undefined) {
+    const ids = String(req.query.ids)
+      .split(',')
+      .filter(id => mongoose.Types.ObjectId.isValid(id));
+    filtro._id = { $in: ids };
+  }
+  const listas = await Lista.find(filtro).sort('-updatedAt');
   res.json(listas);
 });
 
@@ -27,15 +38,29 @@ router.get('/:id', async (req, res) => {
   res.json(lista);
 });
 
-// PUT /api/listas/:id  { nombre?, presupuesto? }
+// PUT /api/listas/:id  { nombre?, presupuesto?, desmarcarTodo? }
+// desmarcarTodo: true → quita la marca de "comprado" a todos los productos
 router.put('/:id', async (req, res) => {
-  const { nombre, presupuesto } = req.body;
-  const cambios = {};
-  if (nombre !== undefined) cambios.nombre = nombre;
-  if (presupuesto !== undefined) cambios.presupuesto = presupuesto;
-  const lista = await Lista.findByIdAndUpdate(req.params.id, cambios, { returnDocument: 'after', runValidators: true });
+  const { nombre, presupuesto, desmarcarTodo } = req.body;
+  const lista = await Lista.findById(req.params.id);
   if (!lista) return res.status(404).json({ error: 'Lista no encontrada' });
-  res.json(lista);
+  if (nombre !== undefined) lista.nombre = nombre;
+  if (presupuesto !== undefined) lista.presupuesto = presupuesto;
+  if (desmarcarTodo) lista.items.forEach(i => (i.comprado = false));
+  await lista.save();
+  res.json(await lista.populate('items.producto'));
+});
+
+// POST /api/listas/:id/duplicar  { nombre? } → copia la lista (para reutilizarla otra semana)
+router.post('/:id/duplicar', async (req, res) => {
+  const original = await Lista.findById(req.params.id);
+  if (!original) return res.status(404).json({ error: 'Lista no encontrada' });
+  const copia = await Lista.create({
+    nombre: req.body.nombre || `${original.nombre} (copia)`,
+    presupuesto: original.presupuesto,
+    items: original.items.map(i => ({ producto: i.producto, cantidad: i.cantidad, comprado: false }))
+  });
+  res.status(201).json(copia);
 });
 
 // DELETE /api/listas/:id
@@ -62,14 +87,15 @@ router.post('/:id/items', async (req, res) => {
   res.status(201).json(await lista.populate('items.producto'));
 });
 
-// PUT /api/listas/:id/items/:productoId  { cantidad }
+// PUT /api/listas/:id/items/:productoId  { cantidad?, comprado? }
 router.put('/:id/items/:productoId', async (req, res) => {
   const lista = await Lista.findById(req.params.id);
   if (!lista) return res.status(404).json({ error: 'Lista no encontrada' });
   const item = lista.items.find(i => i.producto.equals(req.params.productoId));
   if (!item) return res.status(404).json({ error: 'Ese producto no está en la lista' });
 
-  item.cantidad = Number(req.body.cantidad);
+  if (req.body.cantidad !== undefined) item.cantidad = Number(req.body.cantidad);
+  if (req.body.comprado !== undefined) item.comprado = Boolean(req.body.comprado);
   await lista.save();
   res.json(await lista.populate('items.producto'));
 });
