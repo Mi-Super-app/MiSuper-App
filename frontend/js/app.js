@@ -224,7 +224,7 @@ async function cargarPrecios() {
       const cuando = fechaAmigable(info.ultimaActualizacionDePrecios);
       document.getElementById('comp-nota').textContent =
         `Precios actualizados ${cuando}, tomados de las tiendas en línea. Pueden variar en sucursal.`;
-      document.getElementById('badge-texto').textContent = `Gratis · Precios actualizados ${cuando}`;
+      document.getElementById('badge-texto').textContent = `Precios actualizados ${cuando}`;
     }
   } catch (error) {
     document.getElementById('comp-table').innerHTML =

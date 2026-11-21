@@ -450,7 +450,7 @@ function hojaCuenta(modo = 'entrar') {
     <form data-form="${crear ? 'registro' : 'login'}">
       <h2>${crear ? t('Creá tu cuenta') : t('¡Hola de nuevo!')}</h2>
       <p>${crear
-        ? t('Es opcional y gratis. Con una cuenta ves tus listas en tu celular y en tu compu. Las listas que ya tenés en este dispositivo pasan a tu cuenta.')
+        ? t('Es opcional. Con una cuenta ves tus listas en tu celular y en tu compu. Las listas que ya tenés en este dispositivo pasan a tu cuenta.')
         : t('Entrá para ver tus listas en este dispositivo.')}</p>
       ${crear ? `<label for="f-nom">${t('Tu nombre')}</label>
       <input class="campo" id="f-nom" name="nombre" autocomplete="name" maxlength="60" required>` : ''}
@@ -688,7 +688,15 @@ function textoParaCompartir() {
 function compartirLista() {
   if (!estado.lista || !itemsValidos().length) return avisar(t('Agregá productos a tu lista primero'));
   cerrarHoja();
-  window.open('https://wa.me/?text=' + encodeURIComponent(textoParaCompartir()), '_blank', 'noopener');
+  const url = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(textoParaCompartir());
+  // En el celular (y en la app instalada) las ventanas nuevas suelen bloquearse:
+  // navegamos directo y el sistema abre WhatsApp. En la compu abrimos otra pestaña.
+  const esCelular = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+    matchMedia('(display-mode: standalone)').matches;
+  if (esCelular) { location.href = url; return; }
+  const ventana = window.open(url, '_blank');
+  if (ventana) ventana.opener = null;
+  else location.href = url;
 }
 
 /* ══════════════ DIBUJAR LA PANTALLA ══════════════ */
@@ -949,7 +957,7 @@ function renderComparar() {
 }
 
 /* ══════════════ AJUSTES ══════════════ */
-const VERSION_APP = '1.4.0';
+const VERSION_APP = '1.4.1';
 
 // Botones de opciones: [valor, texto]
 function segmento(accion, actual, opciones, etiqueta) {

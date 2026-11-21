@@ -182,7 +182,7 @@ Object.assign(TRADUCCIONES, {
   'Crear cuenta': 'Create account',
   'Creá tu cuenta': 'Create your account',
   '¡Hola de nuevo!': 'Welcome back!',
-  'Es opcional y gratis. Con una cuenta ves tus listas en tu celular y en tu compu. Las listas que ya tenés en este dispositivo pasan a tu cuenta.': "It's optional and free. With an account you see your lists on your phone and your computer. The lists you already have on this device move to your account.",
+  'Es opcional. Con una cuenta ves tus listas en tu celular y en tu compu. Las listas que ya tenés en este dispositivo pasan a tu cuenta.': "It's optional. With an account you see your lists on your phone and your computer. The lists you already have on this device move to your account.",
   'Entrá para ver tus listas en este dispositivo.': 'Sign in to see your lists on this device.',
   'Tu nombre': 'Your name',
   'Correo': 'Email',
