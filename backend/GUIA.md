@@ -307,6 +307,30 @@ sin que tengas que hacer nada.
 
 ---
 
+## "Olvidé mi contraseña": configurar el correo
+
+Para que la app pueda mandar el correo de recuperación, agrega estas variables en tu
+`.env` y en Render (**Environment**):
+
+| Variable | Qué poner |
+|---|---|
+| `APP_URL` | La dirección de tu app, ej: `https://misuper.onrender.com` (sin `/` al final). **Obligatoria en Render.** En tu compu se puede dejar vacía |
+| `CORREO_REMITENTE` | El correo que envía, ej: `misupernicaragua@gmail.com` |
+| `BREVO_API_KEY` | Recomendado. Crea una cuenta gratis en https://www.brevo.com, verifica tu correo remitente y copia la clave en **SMTP & API → API Keys** |
+
+Render gratis bloquea el envío de correo por SMTP, por eso se recomienda Brevo (que
+manda los correos por HTTPS). Si tu hosting sí permite SMTP, puedes usar en su lugar
+`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER` y `SMTP_PASS` (por ejemplo Gmail con una
+"contraseña de aplicación").
+
+Si no configuras ningún servicio, el correo **no se envía**: el link aparece en la
+consola del servidor (útil para probar en tu compu).
+
+El link del correo sirve **1 hora** y **una sola vez**. Al usarlo, la persona pone su
+contraseña nueva y queda dentro de su cuenta.
+
+---
+
 ## Referencia de la API (para el frontend)
 
 | Método | Ruta | Qué hace |
@@ -328,6 +352,11 @@ sin que tengas que hacer nada.
 | PUT | `/api/listas/:id/items/:productoId` | Cambiar cantidad `{ "cantidad": 3 }` |
 | DELETE | `/api/listas/:id/items/:productoId` | Quitar producto |
 | GET | `/api/listas/:id/comparar` | **Total en cada súper vs. presupuesto** |
+| POST | `/api/auth/olvide` | Manda el correo para cambiar la contraseña `{ "email": "..." }` |
+| POST | `/api/auth/restablecer` | Pone la contraseña nueva `{ "token": "...", "password": "..." }` |
+| GET | `/api/compras` | Historial de gastos: mis compras y el total de cada mes |
+| POST | `/api/compras` | Guardar una compra `{ "nombre", "supermercado", "total", "fecha"? }` |
+| DELETE | `/api/compras/:id` | Borrar una compra del historial |
 | GET | `/api/actualizaciones` | Últimas 10 actualizaciones |
 | GET | `/api/actualizaciones/revisar` | Precios con error o cambio sospechoso |
 | POST | `/api/actualizaciones/ejecutar` | Actualizar precios ahora |

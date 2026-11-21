@@ -39,6 +39,7 @@ app.use('/api/supermercados', require('./routes/supermercados'));
 app.use('/api/productos', require('./routes/productos'));
 app.use('/api/precios', require('./routes/precios'));
 app.use('/api/listas', require('./routes/listas'));
+app.use('/api/compras', require('./routes/compras'));
 app.use('/api/actualizaciones', require('./routes/actualizaciones'));
 
 // LA PÁGINA WEB: el mismo servidor entrega la carpeta "frontend".

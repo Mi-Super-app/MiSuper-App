@@ -2,6 +2,27 @@
    MI SÚPER · PÁGINA DE INICIO (index.html)
    ══════════════════════════════════════════════════════════ */
 
+/* ── PANTALLA DE CARGA ── */
+(function () {
+  const splash = document.getElementById('splash');
+  if (!splash) return;
+  const inicio = Date.now();
+  let listo = false;
+  function ocultar() {
+    if (listo) return;
+    listo = true;
+    setTimeout(() => {
+      splash.classList.add('oculto');
+      document.body.classList.remove('con-splash'); // arrancan las animaciones de la portada
+      try { sessionStorage.setItem('misuper-splash-inicio', '1'); } catch (e) { }
+      setTimeout(() => splash.remove(), 600);
+    }, Math.max(0, 1000 - (Date.now() - inicio)));
+  }
+  if (document.readyState === 'complete') ocultar();
+  else window.addEventListener('load', ocultar);
+  setTimeout(ocultar, 3500); // por si alguna fuente o imagen tarda demasiado
+})();
+
 /* ── MENÚ DEL CELULAR ── */
 const menuBtn = document.getElementById('menu-btn');
 const menuMovil = document.getElementById('menu-movil');

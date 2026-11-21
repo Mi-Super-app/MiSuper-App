@@ -1,0 +1,40 @@
+# ACTUALIZACIÓN DIARIA DE PRECIOS (GitHub Actions)
+# ------------------------------------------------
+# Render duerme el servidor gratis si nadie lo usa, y dormido node-cron no corre.
+# Este trabajo lo despierta todos los días a las 6:00 a.m. (hora de Nicaragua)
+# y le pide actualizar los precios.
+#
+# Necesita 2 "secretos" en GitHub (Settings → Secrets and variables → Actions):
+#   MISUPER_URL  → la dirección de tu app, ej: https://misuper.onrender.com  (sin / al final)
+#   ADMIN_CLAVE  → la misma clave que pusiste en Render
+#
+# También lo puedes correr a mano: pestaña Actions → este trabajo → "Run workflow".
+
+name: Actualizar precios cada día
+
+on:
+  schedule:
+    - cron: '0 12 * * *'   # 12:00 UTC = 6:00 a.m. en Nicaragua
+  workflow_dispatch:
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Despertar el servidor
+        run: |
+          for intento in 1 2 3 4 5 6; do
+            if curl -sf --max-time 90 "${{ secrets.MISUPER_URL }}/api/estado"; then
+              echo ""; echo "✅ Servidor despierto"; exit 0
+            fi
+            echo "Todavía despertando... intento $intento, espero 20 segundos"
+            sleep 20
+          done
+          echo "❌ El servidor no respondió"; exit 1
+
+      - name: Pedir la actualización de precios
+        run: |
+          curl -sf -X POST \
+            -H "x-admin-clave: ${{ secrets.ADMIN_CLAVE }}" \
+            "${{ secrets.MISUPER_URL }}/api/actualizaciones/ejecutar"
+          echo ""; echo "✅ Actualización pedida. Revisa /api/actualizaciones en unos minutos."

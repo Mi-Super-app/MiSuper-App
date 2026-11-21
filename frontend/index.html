@@ -16,6 +16,7 @@
     rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/animaciones.css">
   <script>
     /* Aplica el tema guardado antes de pintar la página (evita el parpadeo) */
     (function () {
@@ -27,6 +28,23 @@
 </head>
 
 <body>
+
+  <!-- PANTALLA DE CARGA (solo la primera vez que entrás en la sesión) -->
+  <div class="splash" id="splash" role="status" aria-label="Cargando Mi Súper">
+    <div class="splash-centro">
+      <div class="splash-logo-wrap"><img class="splash-logo" src="img/icono.svg" alt=""></div>
+      <div class="splash-marca"><span class="splash-mi">MI</span><span class="splash-super">SÚPER</span></div>
+      <div class="splash-barra"><div></div></div>
+      <p class="splash-texto">Tu supermercado inteligente</p>
+    </div>
+  </div>
+  <script>
+    /* Si ya la viste en esta sesión, no se muestra de nuevo */
+    try {
+      if (sessionStorage.getItem('misuper-splash-inicio')) document.getElementById('splash').remove();
+      else document.body.classList.add('con-splash');
+    } catch (e) { }
+  </script>
 
   <!-- BLOBS -->
   <div class="blob b1"></div>
@@ -229,8 +247,8 @@
         <div class="feat-card reveal">
           <span class="feat-icon">📱</span>
           <div class="feat-title">En tu celular y tu compu</div>
-          <p class="feat-desc">Funciona en Android, iPhone, tablet y computadora. Instalala en tu pantalla de inicio y
-            abrila como cualquier app.</p>
+          <p class="feat-desc">Funciona en Android, iPhone, tablet y computadora. Instalala en tu pantalla de inicio y,
+            con una cuenta opcional, tus listas te siguen a todos lados.</p>
           <span class="feat-tag">Instalable</span>
         </div>
       </div>
@@ -384,7 +402,7 @@
           <div class="step-connector"></div>
           <span class="step-num">1</span>
           <div class="step-title">Abrí la app</div>
-          <p class="step-desc">Es gratis y no necesitás crear cuenta. Tus listas quedan guardadas en tu dispositivo.</p>
+          <p class="step-desc">Es gratis y podés empezar sin cuenta. Si querés ver tus listas en todos tus dispositivos, creá una cuenta opcional.</p>
         </div>
         <div class="step-item reveal">
           <div class="step-connector"></div>
@@ -416,7 +434,7 @@
         <div>
           <span class="section-eyebrow reveal">Preguntas frecuentes</span>
           <h2 class="section-title reveal faq-titulo">Todo lo<br>que querés<br><span>saber</span></h2>
-          <p class="faq-intro reveal">¿Tenés más dudas? Abrí la app y explorala: es gratis y no necesitás registrarte.</p>
+          <p class="faq-intro reveal">¿Tenés más dudas? Abrí la app y explorala: es gratis y no necesitás registrarte para empezar.</p>
         </div>
         <div class="faq-list reveal">
           <div class="faq-item">
@@ -432,8 +450,9 @@
           </div>
           <div class="faq-item">
             <button class="faq-q" aria-expanded="false">¿Necesito crear una cuenta? <span class="faq-icon">+</span></button>
-            <div class="faq-a">No. Tus listas se guardan en nuestra base de datos y tu dispositivo recuerda cuáles son
-              tuyas. Solo guardamos el nombre de la lista, el presupuesto y los productos: ningún dato personal.</div>
+            <div class="faq-a">No es obligatorio: podés usar Mi Súper sin cuenta y tus listas quedan en ese dispositivo.
+              Si creás una cuenta gratis (con tu correo y una contraseña), ves tus listas en tu celular y en tu
+              computadora. De tu cuenta solo guardamos tu nombre y tu correo; la contraseña se guarda cifrada.</div>
           </div>
           <div class="faq-item">
             <button class="faq-q" aria-expanded="false">¿Puedo usar Mi Súper en el celular? <span class="faq-icon">+</span></button>
@@ -455,7 +474,7 @@
     <div class="cta-glow"></div>
     <div class="section-inner" style="position:relative;z-index:1;">
       <h2 class="cta-title reveal">Empezá a ahorrar<br><span>desde hoy</span></h2>
-      <p class="cta-sub reveal">Gratis, sin cuenta y con los precios de hoy.</p>
+      <p class="cta-sub reveal">Gratis, con los precios de hoy y sin registrarte para empezar.</p>
       <div class="cta-btns reveal">
         <button class="btn-primary" id="btn-instalar" type="button" hidden>📲 Instalar Mi Súper</button>
         <a class="btn-primary" href="app.html">🛒 Abrir Mi Súper</a>

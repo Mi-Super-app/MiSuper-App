@@ -26,7 +26,7 @@
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; background: #0a2a4a; }
+html { -webkit-text-size-adjust: 100%; background: #0a2a4a; overflow-x: hidden; }
 body {
   font-family: 'Nunito', sans-serif;
   background: linear-gradient(135deg, var(--verde-deep) 0%, var(--azul-dark) 55%, var(--azul-deep) 100%);
@@ -107,11 +107,12 @@ button { cursor: pointer; }
 }
 
 /* ── ESTRUCTURA: CELULAR (una sección a la vez) ── */
-.app-main { position: relative; z-index: 1; padding: 16px 16px calc(var(--tabbar-h) + 28px + env(safe-area-inset-bottom)); max-width: 1400px; margin: 0 auto; }
-.vista { display: none; animation: aparecer .25s ease; }
+.app-main { position: relative; z-index: 1; overflow-x: clip; padding: 16px 16px calc(var(--tabbar-h) + 28px + env(safe-area-inset-bottom)); max-width: 1400px; margin: 0 auto; }
+.vista { display: none; }
 body[data-vista="productos"] #vista-productos,
 body[data-vista="lista"] #vista-lista,
-body[data-vista="comparar"] #vista-comparar { display: block; }
+body[data-vista="comparar"] #vista-comparar,
+body[data-vista="gastos"] #vista-gastos { display: block; }
 @keyframes aparecer { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
 .vista-cabeza { margin-bottom: 16px; }
@@ -119,11 +120,27 @@ body[data-vista="comparar"] #vista-comparar { display: block; }
 .titulo span { background: linear-gradient(135deg, var(--mint), var(--cyan)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 .sub { color: var(--text-2); font-size: 14px; }
 
+/* ── CUENTA ── */
+.btn-cuenta { display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border-radius: 30px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); font-size: 13px; font-weight: 800; }
+.btn-cuenta:hover { background: rgba(29,185,106,0.15); }
+.avatar { width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; color: #fff; background: linear-gradient(135deg, var(--verde-dark), var(--azul)); flex-shrink: 0; }
+.avatar.vacio-av { background: rgba(255,255,255,0.1); font-size: 15px; }
+.avatar.grande { width: 54px; height: 54px; font-size: 24px; }
+.perfil-cabeza { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.perfil-cabeza h2 { margin-bottom: 0; }
+.pestanas-cuenta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; border-radius: 14px; background: rgba(255,255,255,0.06); margin-bottom: 16px; }
+.pestanas-cuenta button { padding: 10px; border-radius: 10px; border: none; background: transparent; font-weight: 800; font-size: 14px; color: var(--text-2); }
+.pestanas-cuenta button.activa { background: linear-gradient(135deg, var(--verde-dark), var(--azul)); color: #fff; }
+.ver-pass { display: flex !important; align-items: center; gap: 8px; text-transform: none !important; letter-spacing: 0 !important; font-size: 13px !important; margin: -4px 0 14px; cursor: pointer; }
+.nota-cuenta { text-align: center; margin: 14px 0 0 !important; font-size: 13px !important; }
+.enlace { background: none; border: none; color: var(--mint); font-weight: 800; font-size: inherit; text-decoration: underline; padding: 0; }
+.sub-productos { margin: -4px 0 12px; font-size: 12px; font-weight: 700; color: var(--text-3); }
+
 /* ── BARRA INFERIOR (celular) ── */
 .tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
   height: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom);
-  display: grid; grid-template-columns: repeat(3, 1fr);
+  display: grid; grid-template-columns: repeat(4, 1fr);
   background: rgba(8,16,28,0.92); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
   border-top: 1px solid rgba(255,255,255,0.08);
 }
@@ -308,6 +325,12 @@ body[data-vista="comparar"] #vista-comparar { display: block; }
 }
 .toast.visible { opacity: 1; transform: translate(-50%, 0); }
 
+/* Celular angosto: se oculta el texto de "precios actualizados" (ya sale bajo el título) */
+@media (max-width: 599px) {
+  .actualizado { display: none; }
+  .cuenta-txt { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
 /* ══════════════ TABLETA (600px o más) ══════════════ */
 @media (min-width: 600px) {
   .prod-grid { grid-template-columns: repeat(2, 1fr); }
@@ -338,7 +361,7 @@ body[data-vista="comparar"] #vista-comparar { display: block; }
     background: rgba(10,20,35,0.55); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--border); border-radius: 24px; padding: 18px;
   }
-  #vista-productos, #vista-comparar { grid-column: 1; grid-row: 1; }
+  #vista-productos, #vista-comparar, #vista-gastos { grid-column: 1; grid-row: 1; }
   body[data-vista="lista"] #vista-productos { display: block; }
   .prod-grid { grid-template-columns: repeat(2, 1fr); }
   .comp-lista { grid-template-columns: repeat(3, 1fr); }
@@ -347,3 +370,94 @@ body[data-vista="comparar"] #vista-comparar { display: block; }
 @media (min-width: 1600px) {
   .prod-grid { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ══════════════ NUEVO: GRÁFICAS, GASTOS E HISTORIAL DE PRECIOS ══════════════ */
+/* Color de cada supermercado en las gráficas (revisados para daltonismo y contraste) */
+:root { --serie-la-colonia: #16a35c; --serie-la-union: #3f8ce8; --serie-walmart: #b8860b; }
+
+.btn-historial {
+  width: 38px; height: 38px; flex-shrink: 0; border-radius: 12px; font-size: 17px;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--border); transition: background .2s;
+}
+.btn-historial:hover { background: rgba(29,185,106,0.15); }
+.btn-terminar { margin-bottom: 10px; border-color: rgba(29,185,106,0.45); color: var(--mint); font-weight: 900; }
+.nota-campo { font-size: 12px !important; color: var(--text-3) !important; margin: -6px 0 12px !important; line-height: 1.5 !important; }
+select.campo { appearance: auto; }
+select.campo option { color: #0b1626; }
+
+/* Tarjetitas de números */
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.tile { background: var(--glass); border: 1px solid var(--border); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tile.destacado { grid-column: 1 / -1; background: linear-gradient(135deg, rgba(29,185,106,0.14), rgba(26,111,196,0.14)); border-color: rgba(29,185,106,0.25); }
+.tile-etq { font-size: 11px; font-weight: 800; color: var(--text-2); text-transform: uppercase; letter-spacing: .6px; }
+.tile-valor { font-family: 'Bebas Neue'; font-size: 30px; line-height: 1.05; letter-spacing: .02em; color: var(--text-1); }
+.tile.destacado .tile-valor { font-size: 40px; }
+.tile-nota { font-size: 12px; color: var(--text-3); font-weight: 700; }
+
+/* Gráficas */
+.grafica-tarjeta { margin-bottom: 14px; }
+.grafica-titulo { font-family: 'Bebas Neue'; font-size: 22px; letter-spacing: .03em; font-weight: 400; margin-bottom: 8px; }
+.grafica { position: relative; touch-action: pan-y; user-select: none; }
+.grafica svg { display: block; width: 100%; height: auto; overflow: visible; }
+.g-rejilla { stroke: var(--border); stroke-width: 1; }
+.g-eje { fill: var(--text-3); font-size: 11px; font-weight: 700; font-family: 'Nunito', sans-serif; }
+.g-eje-fuerte { fill: var(--text-1); }
+.g-barra { fill: var(--verde); }
+.g-barra.en-curso { fill: var(--cyan); }
+.g-promedio { stroke: var(--text-2); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.g-linea { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.g-punto { stroke: rgba(10,20,35,0.97); stroke-width: 2; }
+.g-cruz { stroke: var(--text-3); stroke-width: 1; }
+.g-zona { cursor: crosshair; }
+.tip {
+  position: absolute; z-index: 5; pointer-events: none; min-width: 120px; max-width: 220px;
+  background: rgba(8,16,28,0.96); color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px;
+  padding: 8px 10px; font-size: 12px; line-height: 1.5; box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.tip small { color: rgba(255,255,255,0.6); }
+.tip-fila { display: flex; align-items: center; gap: 6px; }
+.tip-fila i { width: 10px; height: 3px; border-radius: 2px; flex-shrink: 0; }
+.tip-fila b { margin-left: auto; padding-left: 10px; font-family: 'Space Mono'; }
+
+/* Lista de compras guardadas */
+.gastos-lista { display: flex; flex-direction: column; gap: 14px; }
+.gasto-mes h3 { display: flex; justify-content: space-between; font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: .5px; color: var(--text-2); margin: 0 2px 8px; }
+.gasto-mes h3 span:last-child { font-family: 'Space Mono'; color: var(--text-1); }
+.gasto-fila { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 16px; background: var(--glass); border: 1px solid var(--border); margin-bottom: 8px; }
+.gf-info { min-width: 0; }
+.gf-nombre { font-weight: 800; font-size: 14px; }
+.gf-detalle { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+.gf-detalle .ok { color: var(--mint); font-weight: 800; }
+.gf-detalle .mal { color: var(--red); font-weight: 800; }
+.gf-der { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+.gf-total { font-family: 'Space Mono'; font-weight: 700; font-size: 15px; }
+
+/* Historial de precios */
+.hist-sub { margin-bottom: 10px !important; }
+.hist-rangos { margin: 0 0 12px; padding: 0; flex-wrap: wrap; overflow: visible; }
+.hist-grafica { min-height: 180px; margin-bottom: 8px; }
+.leyenda { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 10px; }
+.ley-fila { display: grid; grid-template-columns: 14px 1fr auto; grid-template-areas: "c n p" ". d d"; column-gap: 8px; align-items: center; padding: 8px 10px; border-radius: 12px; background: rgba(255,255,255,0.04); }
+.ley-color { grid-area: c; width: 14px; height: 4px; border-radius: 2px; }
+.ley-nombre { grid-area: n; font-weight: 800; font-size: 14px; }
+.ley-precio { grid-area: p; font-family: 'Space Mono'; font-weight: 700; font-size: 15px; }
+.ley-detalle { grid-area: d; font-size: 12px; }
+.ley-cambio { color: var(--text-3); font-weight: 800; }
+.ley-cambio.baja { color: var(--mint); }
+.ley-cambio.sube { color: var(--red); }
+.hist-detalles { margin-bottom: 12px; }
+.hist-detalles summary { cursor: pointer; font-size: 13px; font-weight: 800; color: var(--mint); padding: 6px 0; }
+.hist-tabla { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
+.hist-tabla th { text-align: left; font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .5px; padding: 4px 6px; }
+.hist-tabla td { padding: 6px; border-top: 1px solid var(--border); color: var(--text-2); }
+.hist-tabla td:last-child { font-family: 'Space Mono'; color: var(--text-1); text-align: right; }
+.hist-tabla th:last-child { text-align: right; }
+
+@media (min-width: 600px) {
+  .tiles { grid-template-columns: 2fr 1fr 1fr; }
+  .tile.destacado { grid-column: auto; }
+}
+@media (max-width: 380px) {
+  .tab { font-size: 11px; }
+}
+.hist-poco { padding: 28px 12px; } .hist-poco .vacio-ico { font-size: 36px; }

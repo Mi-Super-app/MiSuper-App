@@ -15,14 +15,44 @@ const API_BASE = (function () {
   return '';
 })();
 
+/* ── Sesión y dispositivo ──
+   misuper-token: la sesión de la cuenta (si la persona entró)
+   misuper-dispositivo: clave al azar de este celular/compu (para listas sin cuenta) */
+const LS_TOKEN = 'misuper-token';
+const LS_DISPOSITIVO = 'misuper-dispositivo';
+function leerLS(clave) { try { return localStorage.getItem(clave); } catch { return null; } }
+function guardarLS(clave, valor) { try { valor === null ? localStorage.removeItem(clave) : localStorage.setItem(clave, valor); } catch { } }
+
+function claveDispositivo() {
+  let clave = leerLS(LS_DISPOSITIVO);
+  if (!clave) {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    clave = 'd-' + Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+    guardarLS(LS_DISPOSITIVO, clave);
+  }
+  return clave;
+}
+
 /* Pide datos al backend. Uso: const productos = await api('/api/productos') */
-async function api(ruta, opciones = {}) {
+async function api(ruta, opciones = {}, reintento = false) {
+  const headers = { 'Content-Type': 'application/json', 'x-dispositivo': claveDispositivo() };
+  const token = leerLS(LS_TOKEN);
+  if (token) headers.Authorization = 'Bearer ' + token;
+
   const res = await fetch(API_BASE + ruta, {
-    headers: { 'Content-Type': 'application/json' },
     ...opciones,
+    headers,
     body: opciones.body ? JSON.stringify(opciones.body) : undefined
   });
   const datos = await res.json().catch(() => ({}));
+
+  // Sesión vencida: la cerramos y repetimos la petición sin cuenta
+  if (res.status === 401 && token && !reintento && !ruta.startsWith('/api/auth/')) {
+    guardarLS(LS_TOKEN, null);
+    window.dispatchEvent(new Event('misuper:sesion-vencida'));
+    return api(ruta, opciones, true);
+  }
   if (!res.ok) throw new Error(datos.error || `Error ${res.status}`);
   return datos;
 }

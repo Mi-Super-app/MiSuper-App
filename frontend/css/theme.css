@@ -109,3 +109,17 @@
 [data-theme="light"] .btn-ghost { background: rgba(8,40,60,0.05); border-color: var(--border); }
 [data-theme="light"] .fondo-hoja { background: rgba(8,24,38,0.35); }
 [data-theme="light"] .toast { background: #0b1626; color: #fff; }
+
+[data-theme="light"] .btn-cuenta,
+[data-theme="light"] .pestanas-cuenta { background: rgba(8,40,60,0.05); border-color: var(--border); }
+[data-theme="light"] .avatar.vacio-av { background: rgba(8,40,60,0.08); }
+
+/* Gráficas en modo claro: colores más oscuros para que se vean sobre blanco */
+[data-theme="light"] {
+  --serie-la-colonia: #0f8f50;
+  --serie-la-union:   #2f72d6;
+  --serie-walmart:    #b07a00;
+}
+[data-theme="light"] .g-punto { stroke: #fff; }
+[data-theme="light"] .ley-fila { background: rgba(8,40,60,0.04); }
+[data-theme="light"] .btn-historial { background: rgba(8,40,60,0.04); }
