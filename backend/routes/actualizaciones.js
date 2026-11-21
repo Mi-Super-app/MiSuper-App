@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const ActualizacionLog = require('../models/ActualizacionLog');
 const ProductoSupermercado = require('../models/ProductoSupermercado');
+const Reporte = require('../models/Reporte');
 const { actualizarPrecios } = require('../jobs/actualizarPrecios');
 
 // Protección simple: si en .env pones ADMIN_CLAVE=algo, estas rutas
@@ -30,6 +31,12 @@ router.get('/revisar', async (req, res) => {
     .populate('producto', 'nombre')
     .populate('supermercado', 'nombre');
   res.json(pendientes);
+});
+
+// GET /api/actualizaciones/reportes → precios incorrectos que reportaron los usuarios (los últimos 100)
+router.get('/reportes', async (req, res) => {
+  const reportes = await Reporte.find().sort('-createdAt').limit(100).populate('usuario', 'nombre email');
+  res.json(reportes);
 });
 
 // POST /api/actualizaciones/ejecutar → corre la actualización ahora mismo

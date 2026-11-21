@@ -122,14 +122,16 @@ router.delete('/:id/items/:productoId', cargarLista, async (req, res) => {
   res.json(await lista.populate('items.producto'));
 });
 
-// GET /api/listas/:id/comparar
+// GET /api/listas/:id/comparar   (opcional: ?supermercados=la-colonia,walmart)
 // LA FUNCIÓN PRINCIPAL DE LA APP: cuánto cuesta la lista en cada súper
 // y si alcanza el presupuesto.
 router.get('/:id/comparar', cargarLista, async (req, res) => {
   const lista = await req.lista.populate('items.producto');
 
   const items = lista.items.filter(i => i.producto); // por si se borró algún producto
-  const supermercados = await Supermercado.find().sort('nombre');
+  // ?supermercados=la-colonia,walmart → comparar solo en "mis supermercados" (Ajustes de la app)
+  const elegidos = String(req.query.supermercados || '').split(',').filter(Boolean);
+  const supermercados = await Supermercado.find(elegidos.length ? { slug: { $in: elegidos } } : {}).sort('nombre');
   const enlaces = await ProductoSupermercado.find({
     producto: { $in: items.map(i => i.producto._id) },
     precioActual: { $gt: 0 },

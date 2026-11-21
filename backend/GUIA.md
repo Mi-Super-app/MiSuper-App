@@ -356,7 +356,7 @@ contraseña nueva y queda dentro de su cuenta.
 | GET | `/` | Estado de la API y última actualización de precios |
 | GET | `/api/supermercados` | Los 3 supermercados |
 | GET | `/api/supermercados/:slug/productos` | Sección de un súper (`la-colonia`, `la-union`, `walmart`). Filtros: `?categoria=lacteos&pagina=2&limite=200` |
-| GET | `/api/productos` | Sin filtros: los 26 del catálogo base. Con filtros busca en **todos**: `?q=texto`, `?categoria=lacteos`, `?supermercado=walmart`, `?ids=ID1,ID2`, `?pagina=2&limite=60` (total en el encabezado `X-Total`) |
+| GET | `/api/productos` | Sin filtros: los productos del catálogo base. Con filtros busca en **todos**: `?q=texto`, `?categoria=lacteos`, `?supermercado=walmart,la-union`, `?ids=ID1,ID2`, `?orden=precio` (más barato primero), `?pagina=2&limite=60` (total en el encabezado `X-Total`) |
 | GET | `/api/productos/resumen` | Cuántos productos hay en cada sección |
 | GET | `/api/productos/categorias` | Categorías válidas |
 | GET | `/api/productos/:id` | Un producto con sus precios |
@@ -370,7 +370,12 @@ contraseña nueva y queda dentro de su cuenta.
 | POST | `/api/listas/:id/items` | Agregar producto `{ "productoId": "...", "cantidad": 2 }` |
 | PUT | `/api/listas/:id/items/:productoId` | Cambiar cantidad `{ "cantidad": 3 }` |
 | DELETE | `/api/listas/:id/items/:productoId` | Quitar producto |
-| GET | `/api/listas/:id/comparar` | **Total en cada súper vs. presupuesto** |
+| GET | `/api/listas/:id/comparar` | **Total en cada súper vs. presupuesto**. Solo algunos súper: `?supermercados=la-colonia,walmart` |
+| PUT | `/api/auth/yo` | Cambiar mi nombre `{ "nombre": "..." }` |
+| PUT | `/api/auth/password` | Cambiar contraseña `{ "actual": "...", "nueva": "..." }` |
+| DELETE | `/api/auth/yo` | Eliminar mi cuenta, listas y gastos `{ "actual": "..." }` |
+| POST | `/api/reportes` | Reportar un precio incorrecto `{ "mensaje", "producto"?, "contacto"? }` |
+| GET | `/api/actualizaciones/reportes` | Ver los reportes de precios incorrectos (pide `x-admin-clave`) |
 | POST | `/api/auth/olvide` | Manda el correo para cambiar la contraseña `{ "email": "..." }` |
 | POST | `/api/auth/restablecer` | Pone la contraseña nueva `{ "token": "...", "password": "..." }` |
 | GET | `/api/compras` | Historial de gastos: mis compras y el total de cada mes |

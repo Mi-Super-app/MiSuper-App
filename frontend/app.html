@@ -18,11 +18,20 @@
   <link rel="stylesheet" href="css/theme.css">
   <link rel="stylesheet" href="css/animaciones.css">
   <script>
-    /* Aplica el tema guardado antes de pintar la página (evita el parpadeo) */
+    /* Aplica los ajustes guardados antes de pintar la página (evita el parpadeo):
+       tema, tamaño de letra, animaciones e idioma */
     (function () {
-      var t = 'dark';
-      try { var s = localStorage.getItem('misuper-theme'); if (s === 'light' || s === 'dark') t = s; } catch (e) { }
-      document.documentElement.setAttribute('data-theme', t);
+      var raiz = document.documentElement, t = 'dark', a = {};
+      try {
+        var s = localStorage.getItem('misuper-theme');
+        if (s === 'light' || s === 'dark') t = s;
+        if (s === 'auto') t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        a = JSON.parse(localStorage.getItem('misuper-ajustes') || '{}') || {};
+      } catch (e) { }
+      raiz.setAttribute('data-theme', t);
+      raiz.setAttribute('data-letra', a.letra === 'grande' ? 'grande' : 'normal');
+      raiz.setAttribute('data-movimiento', a.movimiento === 'reducido' ? 'reducido' : 'auto');
+      raiz.setAttribute('lang', a.idioma === 'en' ? 'en' : 'es');
     })();
   </script>
 </head>
@@ -35,7 +44,7 @@
       <div class="splash-logo-wrap"><img class="splash-logo" src="img/icono.svg" alt=""></div>
       <div class="splash-marca"><span class="splash-mi">MI</span><span class="splash-super">SÚPER</span></div>
       <div class="splash-barra"><div></div></div>
-      <p class="splash-texto" id="splash-texto">Cargando los precios de hoy…</p>
+      <p class="splash-texto" id="splash-texto" data-i18n>Cargando los precios de hoy…</p>
     </div>
   </div>
 
@@ -51,28 +60,24 @@
 
     <!-- Pestañas (solo en computadora) -->
     <div class="tabs-escritorio" role="tablist">
-      <button class="tab-esc" data-accion="ir" data-vista="productos" role="tab">🛒 Productos</button>
-      <button class="tab-esc" data-accion="ir" data-vista="comparar" role="tab">📊 Comparar</button>
-      <button class="tab-esc" data-accion="ir" data-vista="gastos" role="tab">📅 Mis gastos</button>
+      <button class="tab-esc" data-accion="ir" data-vista="productos" role="tab">🛒 <span data-i18n>Productos</span></button>
+      <button class="tab-esc" data-accion="ir" data-vista="comparar" role="tab">📊 <span data-i18n>Comparar</span></button>
+      <button class="tab-esc" data-accion="ir" data-vista="gastos" role="tab">📅 <span data-i18n>Mis gastos</span></button>
+      <button class="tab-esc" data-accion="ir" data-vista="ajustes" role="tab">⚙️ <span data-i18n>Ajustes</span></button>
     </div>
 
     <div class="header-der">
-      <span class="actualizado" id="actualizado" title="Los precios se actualizan solos todos los días">Cargando precios…</span>
+      <span class="actualizado" id="actualizado" title="Los precios se actualizan solos todos los días" data-i18n-title>Cargando precios…</span>
       <button class="btn-cuenta" id="btn-cuenta" type="button" data-accion="cuenta" data-modo="entrar" aria-label="Entrar o crear cuenta (opcional)">
         <span class="avatar vacio-av">👤</span><span class="cuenta-txt">Entrar</span>
-      </button>
-      <button class="theme-toggle" type="button" role="switch" aria-checked="true" aria-label="Cambiar a modo claro" title="Cambiar tema">
-        <span class="tt-icon" aria-hidden="true">☀️</span>
-        <span class="tt-icon" aria-hidden="true">🌙</span>
-        <span class="tt-knob" aria-hidden="true"></span>
       </button>
     </div>
   </header>
 
   <!-- Aviso si no hay conexión con el servidor -->
   <div class="aviso" id="aviso" hidden>
-    <span>⚠️ No se pudo conectar con Mi Súper. Revisá tu internet.</span>
-    <button class="btn-ghost btn-sm" data-accion="reintentar">Reintentar</button>
+    <span data-i18n>⚠️ No se pudo conectar con Mi Súper. Revisá tu internet.</span>
+    <button class="btn-ghost btn-sm" data-accion="reintentar" data-i18n>Reintentar</button>
   </div>
 
   <main class="app-main">
@@ -80,11 +85,11 @@
     <!-- ══ PRODUCTOS ══ -->
     <section class="vista" id="vista-productos" aria-label="Productos">
       <div class="vista-cabeza">
-        <h1 class="titulo">Productos <span>con precios de hoy</span></h1>
+        <h1 class="titulo"><b data-i18n>Productos</b> <span data-i18n>con precios de hoy</span></h1>
         <p class="sub sub-productos" id="sub-productos">La Colonia, La Unión y Walmart</p>
         <label class="buscador">
           <span aria-hidden="true">🔍</span>
-          <input type="search" id="buscar" placeholder="Buscar: leche, arroz, café…" autocomplete="off" aria-label="Buscar producto">
+          <input type="search" id="buscar" placeholder="Buscar: leche, arroz, café…" autocomplete="off" aria-label="Buscar producto" data-i18n-ph data-i18n-aria>
         </label>
         <div class="chips" id="chips" role="tablist" aria-label="Categorías"></div>
       </div>
@@ -111,7 +116,7 @@
     <!-- ══ COMPARAR ══ -->
     <section class="vista" id="vista-comparar" aria-label="Comparar supermercados">
       <div class="vista-cabeza">
-        <h1 class="titulo">¿Dónde te <span>conviene comprar?</span></h1>
+        <h1 class="titulo"><b data-i18n>¿Dónde te</b> <span data-i18n>conviene comprar?</span></h1>
         <p class="sub" id="comparar-sub">El total de tu lista en cada supermercado.</p>
       </div>
       <div id="comparar-cuerpo"></div>
@@ -120,17 +125,26 @@
     <!-- ══ MIS GASTOS (historial por mes) ══ -->
     <section class="vista" id="vista-gastos" aria-label="Mis gastos">
       <div class="vista-cabeza">
-        <h1 class="titulo">Mis gastos <span>mes a mes</span></h1>
-        <p class="sub">Cada vez que terminás una compra, tocá "✅ Terminé mi compra" en tu lista y queda guardada aquí.</p>
+        <h1 class="titulo"><b data-i18n>Mis gastos</b> <span data-i18n>mes a mes</span></h1>
+        <p class="sub" data-i18n>Cada vez que terminás una compra, tocá "✅ Terminé mi compra" en tu lista y queda guardada aquí.</p>
       </div>
-      <div id="gastos-cuerpo"><div class="cargando">Cargando tu historial…</div></div>
+      <div id="gastos-cuerpo"><div class="cargando" data-i18n>Cargando tu historial…</div></div>
+    </section>
+
+    <!-- ══ AJUSTES ══ -->
+    <section class="vista" id="vista-ajustes" aria-label="Ajustes">
+      <div class="vista-cabeza">
+        <h1 class="titulo"><b data-i18n>Ajustes</b> <span data-i18n>a tu gusto</span></h1>
+        <p class="sub" data-i18n>Se guardan en este dispositivo.</p>
+      </div>
+      <div id="ajustes-cuerpo"></div>
     </section>
 
     <!-- ══ MI LISTA (panel lateral en computadora) ══ -->
     <aside class="vista panel-lista" id="vista-lista" aria-label="Mi lista">
       <div class="lista-cabeza">
         <label class="selector-lista">
-          <span class="sr-only">Lista activa</span>
+          <span class="sr-only" data-i18n>Lista activa</span>
           <select id="selector-lista" aria-label="Elegir lista"></select>
         </label>
         <button class="btn-icono" data-accion="nueva-lista" title="Nueva lista" aria-label="Nueva lista">＋</button>
@@ -140,18 +154,19 @@
       <div class="resumen" id="resumen"></div>
       <div class="items" id="items"></div>
 
-      <button class="btn-ghost btn-bloque btn-terminar" data-accion="registrar-compra" id="btn-terminar" hidden>✅ Terminé mi compra</button>
-      <button class="btn-primary btn-bloque solo-movil" data-accion="ir" data-vista="comparar" id="btn-ver-comparar">📊 Ver en qué súper me conviene</button>
+      <button class="btn-ghost btn-bloque btn-terminar" data-accion="registrar-compra" id="btn-terminar" hidden data-i18n>✅ Terminé mi compra</button>
+      <button class="btn-primary btn-bloque solo-movil" data-accion="ir" data-vista="comparar" id="btn-ver-comparar" data-i18n>📊 Ver en qué súper me conviene</button>
     </aside>
   </main>
 
   <!-- ── BARRA INFERIOR (solo celular) ── -->
   <div class="tabbar" role="tablist" aria-label="Secciones">
     <span class="tab-indicador" aria-hidden="true"></span>
-    <button class="tab" data-accion="ir" data-vista="productos" role="tab"><span class="tab-ico">🛒</span>Productos</button>
-    <button class="tab" data-accion="ir" data-vista="lista" role="tab"><span class="tab-ico">📝<span class="badge" id="badge" hidden>0</span></span>Mi lista</button>
-    <button class="tab" data-accion="ir" data-vista="comparar" role="tab"><span class="tab-ico">📊</span>Comparar</button>
-    <button class="tab" data-accion="ir" data-vista="gastos" role="tab"><span class="tab-ico">📅</span>Gastos</button>
+    <button class="tab" data-accion="ir" data-vista="productos" role="tab"><span class="tab-ico">🛒</span><span data-i18n>Productos</span></button>
+    <button class="tab" data-accion="ir" data-vista="lista" role="tab"><span class="tab-ico">📝<span class="badge" id="badge" hidden>0</span></span><span data-i18n>Mi lista</span></button>
+    <button class="tab" data-accion="ir" data-vista="comparar" role="tab"><span class="tab-ico">📊</span><span data-i18n>Comparar</span></button>
+    <button class="tab" data-accion="ir" data-vista="gastos" role="tab"><span class="tab-ico">📅</span><span data-i18n>Gastos</span></button>
+    <button class="tab" data-accion="ir" data-vista="ajustes" role="tab"><span class="tab-ico">⚙️</span><span data-i18n>Ajustes</span></button>
   </div>
 
   <!-- Hoja emergente (formularios y menús) -->
@@ -162,6 +177,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="js/config.js"></script>
+  <script src="js/i18n.js"></script>
   <script src="js/theme.js"></script>
   <script src="js/miapp.js"></script>
 </body>

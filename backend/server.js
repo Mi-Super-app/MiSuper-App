@@ -41,6 +41,7 @@ app.use('/api/precios', require('./routes/precios'));
 app.use('/api/listas', require('./routes/listas'));
 app.use('/api/compras', require('./routes/compras'));
 app.use('/api/actualizaciones', require('./routes/actualizaciones'));
+app.use('/api/reportes', require('./routes/reportes'));
 
 // LA PÁGINA WEB: el mismo servidor entrega la carpeta "frontend".
 //   http://localhost:3000          → página de inicio (index.html)

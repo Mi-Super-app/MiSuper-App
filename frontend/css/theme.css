@@ -123,3 +123,8 @@
 [data-theme="light"] .g-punto { stroke: #fff; }
 [data-theme="light"] .ley-fila { background: rgba(8,40,60,0.04); }
 [data-theme="light"] .btn-historial { background: rgba(8,40,60,0.04); }
+
+/* Ajustes */
+[data-theme="light"] .segmento,
+[data-theme="light"] .aj-super { background: rgba(8,40,60,0.05); }
+[data-theme="light"] .aj-super:has(input:checked) { background: rgba(15,154,87,0.12); }

@@ -9,11 +9,11 @@
    Si cambiás archivos y querés forzar que todos los teléfonos
    descarguen la versión nueva, subí el número de VERSION.
    ══════════════════════════════════════════════════════════ */
-const VERSION = 'misuper-v4';
+const VERSION = 'misuper-v5';
 const ARCHIVOS = [
   './', 'index.html', 'app.html',
   'css/style.css', 'css/app.css', 'css/theme.css', 'css/animaciones.css',
-  'js/config.js', 'js/theme.js', 'js/app.js', 'js/miapp.js',
+  'js/config.js', 'js/i18n.js', 'js/theme.js', 'js/app.js', 'js/miapp.js',
   'img/icono.svg', 'img/icono-192.png', 'img/icono-512.png',
   'manifest.webmanifest'
 ];

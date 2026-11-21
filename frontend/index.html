@@ -21,7 +21,11 @@
     /* Aplica el tema guardado antes de pintar la página (evita el parpadeo) */
     (function () {
       var t = 'dark';
-      try { var s = localStorage.getItem('misuper-theme'); if (s === 'light' || s === 'dark') t = s; } catch (e) { }
+      try {
+        var s = localStorage.getItem('misuper-theme');
+        if (s === 'light' || s === 'dark') t = s;
+        if (s === 'auto') t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      } catch (e) { }
       document.documentElement.setAttribute('data-theme', t);
     })();
   </script>

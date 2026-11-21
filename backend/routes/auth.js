@@ -2,6 +2,9 @@
 //   POST /api/auth/registro  { nombre, email, password }
 //   POST /api/auth/login     { email, password }
 //   GET  /api/auth/yo        → datos del usuario con sesión
+//   PUT  /api/auth/yo        { nombre }            → cambiar el nombre
+//   PUT  /api/auth/password  { actual, nueva }     → cambiar la contraseña
+//   DELETE /api/auth/yo      { actual }            → eliminar la cuenta con sus listas y gastos
 //
 //   POST /api/auth/olvide      { email }            → manda un correo con un link para cambiar la contraseña
 //   POST /api/auth/restablecer { token, password }  → pone la contraseña nueva y deja la sesión abierta
@@ -150,6 +153,53 @@ router.get('/yo', requiereUsuario, async (req, res) => {
   const usuario = await Usuario.findById(req.usuarioId);
   if (!usuario) return res.status(401).json({ error: 'La cuenta ya no existe' });
   res.json(usuario);
+});
+
+// PUT /api/auth/yo { nombre } → cambiar mi nombre
+router.put('/yo', requiereUsuario, async (req, res) => {
+  const nombre = String(req.body.nombre || '').trim();
+  if (!nombre) return res.status(400).json({ error: 'Escribí tu nombre' });
+  if (nombre.length > 60) return res.status(400).json({ error: 'El nombre es muy largo' });
+  const usuario = await Usuario.findByIdAndUpdate(req.usuarioId, { nombre }, { returnDocument: 'after' });
+  if (!usuario) return res.status(401).json({ error: 'La cuenta ya no existe' });
+  res.json(usuario);
+});
+
+// Revisa que la contraseña actual sea la correcta (para cambios delicados)
+async function usuarioConClave(req, res) {
+  const usuario = await Usuario.findById(req.usuarioId);
+  if (!usuario) {
+    res.status(401).json({ error: 'La cuenta ya no existe' });
+    return null;
+  }
+  if (!(await bcrypt.compare(String(req.body.actual || ''), usuario.passwordHash))) {
+    res.status(400).json({ error: 'La contraseña actual no es correcta' });
+    return null;
+  }
+  return usuario;
+}
+
+// PUT /api/auth/password { actual, nueva } → cambiar contraseña
+router.put('/password', requiereUsuario, limiteIntentos, async (req, res) => {
+  const nueva = String(req.body.nueva || '');
+  if (nueva.length < 8) return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+  const usuario = await usuarioConClave(req, res);
+  if (!usuario) return;
+  usuario.passwordHash = await bcrypt.hash(nueva, 10);
+  usuario.resetHash = undefined;
+  usuario.resetExpira = undefined;
+  await usuario.save();
+  res.json({ mensaje: 'Contraseña cambiada' });
+});
+
+// DELETE /api/auth/yo { actual } → eliminar mi cuenta, mis listas y mi historial de gastos
+router.delete('/yo', requiereUsuario, limiteIntentos, async (req, res) => {
+  const usuario = await usuarioConClave(req, res);
+  if (!usuario) return;
+  await Lista.deleteMany({ usuario: usuario._id });
+  await Compra.deleteMany({ usuario: usuario._id });
+  await usuario.deleteOne();
+  res.json({ mensaje: 'Cuenta eliminada' });
 });
 
 module.exports = router;

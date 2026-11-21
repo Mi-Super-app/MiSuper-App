@@ -74,14 +74,14 @@ function esc(texto) {
 
 /* "hace 3 horas", "hoy 6:02 a.m." … */
 function fechaAmigable(iso) {
-  if (!iso) return 'sin datos';
+  if (!iso) return t('sin datos');
   const f = new Date(iso);
   const hoy = new Date();
-  const hora = f.toLocaleTimeString('es-NI', { hour: 'numeric', minute: '2-digit' });
-  if (f.toDateString() === hoy.toDateString()) return `hoy ${hora}`;
+  const hora = f.toLocaleTimeString(LOCALE(), { hour: 'numeric', minute: '2-digit' });
+  if (f.toDateString() === hoy.toDateString()) return t('hoy {hora}', { hora });
   const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1);
-  if (f.toDateString() === ayer.toDateString()) return `ayer ${hora}`;
-  return f.toLocaleDateString('es-NI', { day: 'numeric', month: 'short' }) + ' ' + hora;
+  if (f.toDateString() === ayer.toDateString()) return t('ayer {hora}', { hora });
+  return f.toLocaleDateString(LOCALE(), { day: 'numeric', month: 'short' }) + ' ' + hora;
 }
 
 const CATEGORIAS = {
@@ -110,3 +110,41 @@ const SUPERS = {
   'Walmart':    { emoji: '🏬', color: '#ffc220', slug: 'walmart' }
 };
 const ORDEN_SUPERS = ['La Colonia', 'La Unión', 'Walmart'];
+
+/* ══════════════ AJUSTES (se guardan en este dispositivo) ══════════════
+   idioma:     'es' | 'en'
+   letra:      'normal' | 'grande'
+   supers:     los supermercados que la persona quiere comparar
+   presupuesto: el monto que se pone solo al crear una lista
+   orden:      'nombre' | 'precio'  (cómo se ordenan los productos)
+   movimiento: 'auto' (lo que diga el celular) | 'reducido'
+   El tema (claro / oscuro / automático) va aparte en "misuper-theme". */
+const LS_AJUSTES = 'misuper-ajustes';
+const AJUSTES_BASE = { idioma: 'es', letra: 'normal', supers: ORDEN_SUPERS, presupuesto: 1000, orden: 'nombre', movimiento: 'auto' };
+function leerAjustes() {
+  let guardados = {};
+  try { guardados = JSON.parse(leerLS(LS_AJUSTES) || '{}') || {}; } catch { }
+  const a = { ...AJUSTES_BASE, ...guardados };
+  a.supers = Array.isArray(a.supers) ? ORDEN_SUPERS.filter(s => a.supers.includes(s)) : ORDEN_SUPERS;
+  if (!a.supers.length) a.supers = ORDEN_SUPERS;
+  if (!(Number(a.presupuesto) > 0)) a.presupuesto = AJUSTES_BASE.presupuesto;
+  return a;
+}
+const AJUSTES = leerAjustes();
+function guardarAjustes(cambios) {
+  Object.assign(AJUSTES, cambios);
+  guardarLS(LS_AJUSTES, JSON.stringify(AJUSTES));
+}
+
+/* ══════════════ IDIOMA ══════════════
+   t('Texto en español') devuelve la traducción si la app está en inglés.
+   Las traducciones están en js/i18n.js (solo las carga la app).
+   Variables: t('Te sobran {monto}', { monto: 'C$50' }) */
+const TRADUCCIONES = {};
+const enIngles = () => AJUSTES.idioma === 'en' && Boolean(TRADUCCIONES.__listo);
+const LOCALE = () => (enIngles() ? 'en-US' : 'es-NI');
+function t(texto, vars) {
+  let s = (enIngles() && TRADUCCIONES[texto]) || texto;
+  if (vars) for (const [k, v] of Object.entries(vars)) s = s.split('{' + k + '}').join(v);
+  return s;
+}

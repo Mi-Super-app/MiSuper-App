@@ -40,9 +40,15 @@ const sinTildes = t => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowe
 const numero = v => Number(String(v).replace(/[^\d.]/g, ''));
 const idDe = p => (p && typeof p === 'object' ? p._id : p);
 
+/* Los supermercados que la persona eligió comparar (Ajustes → Mis supermercados) */
+const supersActivos = () => AJUSTES.supers;
+const slugsActivos = () => supersActivos().map(n => SUPERS[n].slug);
+const todosLosSupers = () => supersActivos().length === ORDEN_SUPERS.length;
+const nombreCategoria = c => t((CATEGORIAS[c] || CATEGORIAS.otros).nombre);
+
 function mejorPrecio(producto) {
   let mejor = null;
-  for (const nombre of ORDEN_SUPERS) {
+  for (const nombre of supersActivos()) {
     const v = producto.precios[nombre];
     if (v !== undefined && (!mejor || v < mejor.precio)) mejor = { super: nombre, precio: v };
   }
@@ -58,7 +64,7 @@ function cantidadEnLista(prodId) {
 }
 
 /* ── Animaciones ── */
-const sinMovimiento = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sinMovimiento = () => AJUSTES.movimiento === 'reducido' || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const pausa = ms => new Promise(r => setTimeout(r, sinMovimiento() ? 0 : ms));
 
 // Vuelve a disparar una animación CSS quitando y poniendo la clase
@@ -101,7 +107,7 @@ let splashOculto = false;
 // Si el servidor tarda (en Render gratis puede estar "dormido"), explicamos por qué
 const avisoLento = setTimeout(() => {
   const t = document.getElementById('splash-texto');
-  if (t) t.textContent = 'Despertando el servidor… la primera visita del día puede tardar hasta un minuto ☕';
+  if (t) t.textContent = window.t('Despertando el servidor… la primera visita del día puede tardar hasta un minuto ☕');
 }, 4500);
 function ocultarSplash() {
   if (splashOculto) return;
@@ -122,11 +128,11 @@ function ocultarSplash() {
 /* ── Avisos ── */
 let temporizadorToast;
 function avisar(mensaje) {
-  const t = $('#toast');
-  t.textContent = mensaje;
-  t.classList.add('visible');
+  const caja = $('#toast');
+  caja.textContent = mensaje;
+  caja.classList.add('visible');
   clearTimeout(temporizadorToast);
-  temporizadorToast = setTimeout(() => t.classList.remove('visible'), 2600);
+  temporizadorToast = setTimeout(() => caja.classList.remove('visible'), 2600);
 }
 
 /* ── Hoja emergente ── */
@@ -152,7 +158,7 @@ function cerrarHoja() {
 }
 
 /* ── Navegación entre secciones ── */
-const ORDEN_VISTAS = { productos: 0, lista: 1, comparar: 2, gastos: 3 };
+const ORDEN_VISTAS = { productos: 0, lista: 1, comparar: 2, gastos: 3, ajustes: 4 };
 function irA(vista) {
   const anterior = document.body.dataset.vista;
   const cambio = anterior !== vista;
@@ -167,6 +173,7 @@ function irA(vista) {
     if (vista === 'comparar') cascada($('#comparar-cuerpo .comp-lista'));
   }
   if (vista === 'gastos') cargarGastos();
+  if (vista === 'ajustes') renderAjustes();
   document.querySelectorAll('[data-accion="ir"]').forEach(b => {
     const activa = b.dataset.vista === vista;
     b.classList.toggle('activa', activa && b.classList.contains('tab') || activa && b.classList.contains('tab-esc'));
@@ -183,7 +190,7 @@ async function ejecutar(fn) {
   try {
     await fn();
   } catch (error) {
-    avisar('⚠️ ' + (error.message === 'Failed to fetch' ? 'Sin conexión con Mi Súper' : error.message));
+    avisar('⚠️ ' + (error.message === 'Failed to fetch' ? t('Sin conexión con Mi Súper') : t(error.message)));
   } finally {
     estado.ocupado = false;
   }
@@ -199,27 +206,35 @@ async function iniciar() {
     ]);
     $('#aviso').hidden = true;
     await revisarSesion();
+    estado.info = info;
     estado.productos = productos;
     estado.porId = new Map(productos.map(p => [p.id, p]));
     estado.resumen = resumen;
     if (info.productos > productos.length) {
-      $('#buscar').placeholder = `Buscar entre ${info.productos.toLocaleString('es-NI')} productos: leche, arroz, café…`;
+      $('#buscar').placeholder = t('Buscar entre {n} productos: leche, arroz, café…', { n: info.productos.toLocaleString(LOCALE()) });
     }
     const textoPrecios = info.ultimaActualizacionDePrecios
-      ? `Precios actualizados ${fechaAmigable(info.ultimaActualizacionDePrecios)}`
-      : 'Precios sin actualizar todavía';
+      ? t('Precios actualizados {cuando}', { cuando: fechaAmigable(info.ultimaActualizacionDePrecios) })
+      : t('Precios sin actualizar todavía');
     $('#actualizado').textContent = textoPrecios;
-    $('#sub-productos').textContent = textoPrecios + ' · La Colonia, La Unión y Walmart';
+    $('#sub-productos').textContent = textoPrecios + ' · ' + listaDeNombres(supersActivos());
     renderChips();
     renderProductos();
     await cargarListas();
+    if (document.body.dataset.vista === 'ajustes') renderAjustes(); // ya con los datos cargados
     ocultarSplash();
   } catch (error) {
     ocultarSplash();
     $('#aviso').hidden = false;
-    $('#actualizado').textContent = 'Sin conexión';
-    $('#prod-grid').innerHTML = '<div class="vacio"><span class="vacio-ico">📡</span><p>No pudimos cargar los productos.</p></div>';
+    $('#actualizado').textContent = t('Sin conexión');
+    $('#prod-grid').innerHTML = `<div class="vacio"><span class="vacio-ico">📡</span><p>${t('No pudimos cargar los productos.')}</p></div>`;
   }
+}
+
+/* "La Colonia, La Unión y Walmart" / "La Colonia and Walmart" */
+function listaDeNombres(nombres) {
+  if (nombres.length <= 1) return nombres.join('');
+  return nombres.slice(0, -1).join(', ') + ' ' + t('y') + ' ' + nombres[nombres.length - 1];
 }
 
 /* ¿Hay sesión guardada? */
@@ -257,7 +272,7 @@ async function abrirLista(id) {
 
 async function actualizarComparacion() {
   const [comparacion] = await Promise.all([
-    estado.lista ? api(`/api/listas/${estado.lista._id}/comparar`) : null,
+    estado.lista ? api(`/api/listas/${estado.lista._id}/comparar?supermercados=${slugsActivos().join(',')}`) : null,
     asegurarProductos()
   ]);
   estado.comparacion = comparacion;
@@ -287,7 +302,9 @@ async function buscarProductos({ mas = false } = {}) {
   const params = new URLSearchParams({ limite: POR_PAGINA, pagina });
   if (q) params.set('q', q);
   if (estado.categoria !== 'todas') params.set('categoria', estado.categoria);
-  if (!mas) $('#prod-grid').innerHTML = '<div class="vacio" style="grid-column:1/-1"><span class="vacio-ico">🔎</span><p>Buscando…</p></div>';
+  if (!todosLosSupers()) params.set('supermercado', slugsActivos().join(','));
+  if (AJUSTES.orden === 'precio') params.set('orden', 'precio');
+  if (!mas) $('#prod-grid').innerHTML = `<div class="vacio" style="grid-column:1/-1"><span class="vacio-ico">🔎</span><p>${t('Buscando…')}</p></div>`;
   try {
     const lista = await api('/api/productos?' + params);
     if (consulta !== consultaActual) return;
@@ -297,7 +314,7 @@ async function buscarProductos({ mas = false } = {}) {
     estado.hayMas = lista.length === POR_PAGINA;
     renderProductos();
   } catch {
-    if (consulta === consultaActual) avisar('⚠️ No pudimos buscar ahora. Probá de nuevo.');
+    if (consulta === consultaActual) avisar(t('⚠️ No pudimos buscar ahora. Probá de nuevo.'));
   }
 }
 
@@ -337,7 +354,7 @@ async function agregar(prodId) {
   estado.recienAgregado = prodId;
   await trasCambio(lista);
   estado.recienAgregado = null;
-  avisar(`✓ ${estado.porId.get(prodId)?.nombre || 'Producto'} agregado`);
+  avisar(t('✓ {nombre} agregado', { nombre: estado.porId.get(prodId)?.nombre || t('Producto') }));
 }
 
 async function cambiarCantidad(prodId, cambio) {
@@ -350,7 +367,7 @@ async function cambiarCantidad(prodId, cambio) {
 async function quitar(prodId) {
   const lista = await api(`/api/listas/${estado.lista._id}/items/${prodId}`, { method: 'DELETE' });
   await trasCambio(lista);
-  avisar('Producto quitado de la lista');
+  avisar(t('Producto quitado de la lista'));
 }
 
 async function marcarComprado(prodId) {
@@ -362,34 +379,35 @@ async function marcarComprado(prodId) {
 /* ══════════════ HOJAS (formularios) ══════════════ */
 const ATAJOS = [500, 1000, 2000, 3000, 5000];
 const atajosHtml = () => `<div class="atajos">${ATAJOS.map(v => `<button type="button" class="btn-ghost btn-sm" data-accion="atajo" data-valor="${v}">${fmtC(v)}</button>`).join('')}</div>`;
+const verPassHtml = () => `<label class="ver-pass"><input type="checkbox" data-ver-pass> ${t('Mostrar contraseña')}</label>`;
 
 function hojaBienvenida(productoPendiente = '') {
   abrirHoja(`
     <form data-form="crear" data-pendiente="${esc(productoPendiente)}">
-      <h2>¡Bienvenido a Mi Súper! 👋</h2>
-      <p>Para empezar, decinos <b>cuánto querés gastar</b> en tu compra. Te avisamos en qué supermercado te alcanza mejor.</p>
-      <label for="f-pres">Tu presupuesto (C$)</label>
-      <input class="campo" id="f-pres" name="presupuesto" inputmode="numeric" value="1000" required>
+      <h2>${t('¡Bienvenido a Mi Súper! 👋')}</h2>
+      <p>${t('Para empezar, decinos <b>cuánto querés gastar</b> en tu compra. Te avisamos en qué supermercado te alcanza mejor.')}</p>
+      <label for="f-pres">${t('Tu presupuesto (C$)')}</label>
+      <input class="campo" id="f-pres" name="presupuesto" inputmode="numeric" value="${AJUSTES.presupuesto}" required>
       ${atajosHtml()}
-      <label for="f-nombre">Nombre de la lista</label>
-      <input class="campo" id="f-nombre" name="nombre" value="Compra de la semana" maxlength="40" required>
-      <div class="hoja-acciones"><button class="btn-primary" type="submit">Empezar 🛒</button></div>
-      <p class="nota-cuenta">¿Ya tenés cuenta? <button type="button" class="enlace" data-accion="cuenta" data-modo="entrar">Entrá</button> y aparecen tus listas.</p>
+      <label for="f-nombre">${t('Nombre de la lista')}</label>
+      <input class="campo" id="f-nombre" name="nombre" value="${esc(t('Compra de la semana'))}" maxlength="40" required>
+      <div class="hoja-acciones"><button class="btn-primary" type="submit">${t('Empezar 🛒')}</button></div>
+      <p class="nota-cuenta">${t('¿Ya tenés cuenta?')} <button type="button" class="enlace" data-accion="cuenta" data-modo="entrar">${t('Entrá')}</button> ${t('y aparecen tus listas.')}</p>
     </form>`);
 }
 
 function hojaNuevaLista() {
   abrirHoja(`
     <form data-form="crear">
-      <h2>Nueva lista</h2>
-      <label for="f-nombre">Nombre</label>
-      <input class="campo" id="f-nombre" name="nombre" placeholder="Ej: Compra del mes" maxlength="40" required>
-      <label for="f-pres">Presupuesto (C$)</label>
-      <input class="campo" id="f-pres" name="presupuesto" inputmode="numeric" value="${estado.lista ? estado.lista.presupuesto : 1000}" required>
+      <h2>${t('Nueva lista')}</h2>
+      <label for="f-nombre">${t('Nombre')}</label>
+      <input class="campo" id="f-nombre" name="nombre" placeholder="${esc(t('Ej: Compra del mes'))}" maxlength="40" required>
+      <label for="f-pres">${t('Presupuesto (C$)')}</label>
+      <input class="campo" id="f-pres" name="presupuesto" inputmode="numeric" value="${AJUSTES.presupuesto}" required>
       ${atajosHtml()}
       <div class="hoja-acciones">
-        <button class="btn-ghost" type="button" data-accion="cerrar">Cancelar</button>
-        <button class="btn-primary" type="submit">Crear lista</button>
+        <button class="btn-ghost" type="button" data-accion="cerrar">${t('Cancelar')}</button>
+        <button class="btn-primary" type="submit">${t('Crear lista')}</button>
       </div>
     </form>`);
 }
@@ -397,13 +415,13 @@ function hojaNuevaLista() {
 function hojaPresupuesto() {
   abrirHoja(`
     <form data-form="presupuesto">
-      <h2>Tu presupuesto</h2>
-      <p>¿Cuánto querés gastar en "${esc(estado.lista.nombre)}"?</p>
-      <input class="campo" id="f-pres" name="presupuesto" inputmode="numeric" value="${estado.lista.presupuesto}" required aria-label="Presupuesto en córdobas">
+      <h2>${t('Tu presupuesto')}</h2>
+      <p>${t('¿Cuánto querés gastar en "{nombre}"?', { nombre: esc(estado.lista.nombre) })}</p>
+      <input class="campo" id="f-pres" name="presupuesto" inputmode="numeric" value="${estado.lista.presupuesto}" required aria-label="${esc(t('Presupuesto en córdobas'))}">
       ${atajosHtml()}
       <div class="hoja-acciones">
-        <button class="btn-ghost" type="button" data-accion="cerrar">Cancelar</button>
-        <button class="btn-primary" type="submit">Guardar</button>
+        <button class="btn-ghost" type="button" data-accion="cerrar">${t('Cancelar')}</button>
+        <button class="btn-primary" type="submit">${t('Guardar')}</button>
       </div>
     </form>`);
 }
@@ -411,11 +429,11 @@ function hojaPresupuesto() {
 function hojaRenombrar() {
   abrirHoja(`
     <form data-form="renombrar">
-      <h2>Cambiar nombre</h2>
-      <input class="campo" name="nombre" value="${esc(estado.lista.nombre)}" maxlength="40" required aria-label="Nombre de la lista">
+      <h2>${t('Cambiar nombre')}</h2>
+      <input class="campo" name="nombre" value="${esc(estado.lista.nombre)}" maxlength="40" required aria-label="${esc(t('Nombre de la lista'))}">
       <div class="hoja-acciones">
-        <button class="btn-ghost" type="button" data-accion="cerrar">Cancelar</button>
-        <button class="btn-primary" type="submit">Guardar</button>
+        <button class="btn-ghost" type="button" data-accion="cerrar">${t('Cancelar')}</button>
+        <button class="btn-primary" type="submit">${t('Guardar')}</button>
       </div>
     </form>`);
 }
@@ -426,26 +444,26 @@ function hojaCuenta(modo = 'entrar') {
   const crear = modo === 'crear';
   abrirHoja(`
     <div class="pestanas-cuenta" role="tablist">
-      <button type="button" class="${crear ? '' : 'activa'}" data-accion="cuenta" data-modo="entrar" role="tab" aria-selected="${!crear}">Entrar</button>
-      <button type="button" class="${crear ? 'activa' : ''}" data-accion="cuenta" data-modo="crear" role="tab" aria-selected="${crear}">Crear cuenta</button>
+      <button type="button" class="${crear ? '' : 'activa'}" data-accion="cuenta" data-modo="entrar" role="tab" aria-selected="${!crear}">${t('Entrar')}</button>
+      <button type="button" class="${crear ? 'activa' : ''}" data-accion="cuenta" data-modo="crear" role="tab" aria-selected="${crear}">${t('Crear cuenta')}</button>
     </div>
     <form data-form="${crear ? 'registro' : 'login'}">
-      <h2>${crear ? 'Creá tu cuenta' : '¡Hola de nuevo!'}</h2>
+      <h2>${crear ? t('Creá tu cuenta') : t('¡Hola de nuevo!')}</h2>
       <p>${crear
-        ? 'Es opcional y gratis. Con una cuenta ves tus listas en tu celular y en tu compu. Las listas que ya tenés en este dispositivo pasan a tu cuenta.'
-        : 'Entrá para ver tus listas en este dispositivo.'}</p>
-      ${crear ? `<label for="f-nom">Tu nombre</label>
+        ? t('Es opcional y gratis. Con una cuenta ves tus listas en tu celular y en tu compu. Las listas que ya tenés en este dispositivo pasan a tu cuenta.')
+        : t('Entrá para ver tus listas en este dispositivo.')}</p>
+      ${crear ? `<label for="f-nom">${t('Tu nombre')}</label>
       <input class="campo" id="f-nom" name="nombre" autocomplete="name" maxlength="60" required>` : ''}
-      <label for="f-email">Correo</label>
+      <label for="f-email">${t('Correo')}</label>
       <input class="campo" id="f-email" name="email" type="email" autocomplete="email" inputmode="email" required>
-      <label for="f-pass">Contraseña${crear ? ' (mínimo 8 caracteres)' : ''}</label>
+      <label for="f-pass">${crear ? t('Contraseña (mínimo 8 caracteres)') : t('Contraseña')}</label>
       <input class="campo" id="f-pass" name="password" type="password" minlength="${crear ? 8 : 1}" autocomplete="${crear ? 'new-password' : 'current-password'}" required>
-      <label class="ver-pass"><input type="checkbox" data-ver-pass> Mostrar contraseña</label>
+      ${verPassHtml()}
       <div class="hoja-acciones">
-        <button class="btn-ghost" type="button" data-accion="cerrar">Ahora no</button>
-        <button class="btn-primary" type="submit">${crear ? 'Crear cuenta' : 'Entrar'}</button>
+        <button class="btn-ghost" type="button" data-accion="cerrar">${t('Ahora no')}</button>
+        <button class="btn-primary" type="submit">${crear ? t('Crear cuenta') : t('Entrar')}</button>
       </div>
-      ${crear ? '' : '<p class="nota-cuenta"><button type="button" class="enlace" data-accion="olvide">¿Olvidaste tu contraseña?</button></p>'}
+      ${crear ? '' : `<p class="nota-cuenta"><button type="button" class="enlace" data-accion="olvide">${t('¿Olvidaste tu contraseña?')}</button></p>`}
     </form>`);
 }
 
@@ -453,13 +471,13 @@ function hojaCuenta(modo = 'entrar') {
 function hojaOlvide(email = '') {
   abrirHoja(`
     <form data-form="olvide">
-      <h2>¿Olvidaste tu contraseña?</h2>
-      <p>Escribí el correo de tu cuenta y te mandamos un link para poner una nueva. El link sirve durante 1 hora.</p>
-      <label for="f-email">Correo</label>
+      <h2>${t('¿Olvidaste tu contraseña?')}</h2>
+      <p>${t('Escribí el correo de tu cuenta y te mandamos un link para poner una nueva. El link sirve durante 1 hora.')}</p>
+      <label for="f-email">${t('Correo')}</label>
       <input class="campo" id="f-email" name="email" type="email" autocomplete="email" inputmode="email" value="${esc(email)}" required>
       <div class="hoja-acciones">
-        <button class="btn-ghost" type="button" data-accion="cuenta" data-modo="entrar">Volver</button>
-        <button class="btn-primary" type="submit">Mandar link</button>
+        <button class="btn-ghost" type="button" data-accion="cuenta" data-modo="entrar">${t('Volver')}</button>
+        <button class="btn-primary" type="submit">${t('Mandar link')}</button>
       </div>
     </form>`);
 }
@@ -468,25 +486,25 @@ function hojaCorreoEnviado(mensaje) {
   abrirHoja(`
     <div class="vacio" style="padding:10px 0 0">
       <span class="vacio-ico">📬</span>
-      <h2>Revisá tu correo</h2>
-      <p>${esc(mensaje)}</p>
+      <h2>${t('Revisá tu correo')}</h2>
+      <p>${esc(t(mensaje))}</p>
     </div>
-    <div class="hoja-acciones"><button class="btn-primary" type="button" data-accion="cerrar">Listo</button></div>`);
+    <div class="hoja-acciones"><button class="btn-primary" type="button" data-accion="cerrar">${t('Listo')}</button></div>`);
 }
 
 function hojaRestablecer(token) {
   abrirHoja(`
     <form data-form="restablecer" data-token="${esc(token)}">
-      <h2>Tu contraseña nueva</h2>
-      <p>Escribila dos veces. Después vas a quedar dentro de tu cuenta.</p>
-      <label for="f-pass">Contraseña nueva (mínimo 8 caracteres)</label>
+      <h2>${t('Tu contraseña nueva')}</h2>
+      <p>${t('Escribila dos veces. Después vas a quedar dentro de tu cuenta.')}</p>
+      <label for="f-pass">${t('Contraseña nueva (mínimo 8 caracteres)')}</label>
       <input class="campo" id="f-pass" name="password" type="password" minlength="8" autocomplete="new-password" required>
-      <label for="f-pass2">Repetila</label>
+      <label for="f-pass2">${t('Repetila')}</label>
       <input class="campo" id="f-pass2" name="password2" type="password" minlength="8" autocomplete="new-password" required>
-      <label class="ver-pass"><input type="checkbox" data-ver-pass> Mostrar contraseña</label>
+      ${verPassHtml()}
       <div class="hoja-acciones">
-        <button class="btn-ghost" type="button" data-accion="cerrar">Cancelar</button>
-        <button class="btn-primary" type="submit">Guardar</button>
+        <button class="btn-ghost" type="button" data-accion="cerrar">${t('Cancelar')}</button>
+        <button class="btn-primary" type="submit">${t('Guardar')}</button>
       </div>
     </form>`);
 }
@@ -498,24 +516,76 @@ function hojaPerfil() {
       <span class="avatar grande">${esc(u.nombre.charAt(0).toUpperCase())}</span>
       <div><h2>${esc(u.nombre)}</h2><p style="margin:0">${esc(u.email)}</p></div>
     </div>
-    <p>✓ Tus listas se guardan en tu cuenta. Entrá con el mismo correo en otro celular o compu y las vas a ver ahí también.</p>
+    <p>${t('✓ Tus listas se guardan en tu cuenta. Entrá con el mismo correo en otro celular o compu y las vas a ver ahí también.')}</p>
     <div class="menu-opciones">
-      <button class="btn-ghost" data-accion="cerrar-sesion">🚪 Cerrar sesión</button>
-      <button class="btn-ghost" data-accion="cerrar">Cerrar</button>
+      <button class="btn-ghost" data-accion="ir-ajustes">⚙️ ${t('Ajustes de mi cuenta')}</button>
+      <button class="btn-ghost" data-accion="cerrar-sesion">🚪 ${t('Cerrar sesión')}</button>
+      <button class="btn-ghost" data-accion="cerrar">${t('Cerrar')}</button>
     </div>`);
 }
 
-function renderCuenta() {
-  const btn = $('#btn-cuenta');
-  if (!btn) return;
-  if (estado.usuario) {
-    const nombre = estado.usuario.nombre.split(' ')[0];
-    btn.innerHTML = `<span class="avatar">${esc(nombre.charAt(0).toUpperCase())}</span><span class="cuenta-txt">${esc(nombre)}</span>`;
-    btn.setAttribute('aria-label', `Mi cuenta (${estado.usuario.nombre})`);
-  } else {
-    btn.innerHTML = '<span class="avatar vacio-av">👤</span><span class="cuenta-txt">Entrar</span>';
-    btn.setAttribute('aria-label', 'Entrar o crear cuenta (opcional)');
-  }
+function hojaCambiarNombre() {
+  abrirHoja(`
+    <form data-form="nombre-cuenta">
+      <h2>${t('Cambiar mi nombre')}</h2>
+      <label for="f-nom">${t('Tu nombre')}</label>
+      <input class="campo" id="f-nom" name="nombre" value="${esc(estado.usuario.nombre)}" autocomplete="name" maxlength="60" required>
+      <div class="hoja-acciones">
+        <button class="btn-ghost" type="button" data-accion="cerrar">${t('Cancelar')}</button>
+        <button class="btn-primary" type="submit">${t('Guardar')}</button>
+      </div>
+    </form>`);
+}
+
+function hojaCambiarClave() {
+  abrirHoja(`
+    <form data-form="clave">
+      <h2>${t('Cambiar contraseña')}</h2>
+      <label for="f-actual">${t('Contraseña actual')}</label>
+      <input class="campo" id="f-actual" name="actual" type="password" autocomplete="current-password" required>
+      <label for="f-pass">${t('Contraseña nueva (mínimo 8 caracteres)')}</label>
+      <input class="campo" id="f-pass" name="nueva" type="password" minlength="8" autocomplete="new-password" required>
+      <label for="f-pass2">${t('Repetila')}</label>
+      <input class="campo" id="f-pass2" name="nueva2" type="password" minlength="8" autocomplete="new-password" required>
+      ${verPassHtml()}
+      <div class="hoja-acciones">
+        <button class="btn-ghost" type="button" data-accion="cerrar">${t('Cancelar')}</button>
+        <button class="btn-primary" type="submit">${t('Guardar')}</button>
+      </div>
+    </form>`);
+}
+
+function hojaEliminarCuenta() {
+  abrirHoja(`
+    <form data-form="eliminar-cuenta">
+      <h2>${t('¿Eliminar tu cuenta?')}</h2>
+      <p>${t('Se borran para siempre tu cuenta, todas tus listas y tu historial de gastos. Esto no se puede deshacer.')}</p>
+      <label for="f-actual">${t('Escribí tu contraseña para confirmar')}</label>
+      <input class="campo" id="f-actual" name="actual" type="password" autocomplete="current-password" required>
+      <div class="hoja-acciones">
+        <button class="btn-ghost" type="button" data-accion="cerrar">${t('Cancelar')}</button>
+        <button class="btn-primary" type="submit" style="background:var(--red)">${t('Sí, eliminar mi cuenta')}</button>
+      </div>
+    </form>`);
+}
+
+/* ── REPORTAR UN PRECIO INCORRECTO ── */
+function hojaReportar(producto = '') {
+  abrirHoja(`
+    <form data-form="reporte">
+      <h2>🚩 ${t('Reportar un precio incorrecto')}</h2>
+      <p>${t('Si un precio no coincide con la tienda, avisanos y lo revisamos.')}</p>
+      <label for="f-prod">${t('Producto')}</label>
+      <input class="campo" id="f-prod" name="producto" value="${esc(producto)}" maxlength="200" placeholder="${esc(t('Ej: Leche Eskimo 1 L en Walmart'))}">
+      <label for="f-msg">${t('¿Qué está mal?')}</label>
+      <textarea class="campo" id="f-msg" name="mensaje" maxlength="1000" required placeholder="${esc(t('Ej: en la tienda cuesta C$48, no C$52'))}"></textarea>
+      <label for="f-contacto">${t('Tu correo o teléfono (opcional)')}</label>
+      <input class="campo" id="f-contacto" name="contacto" maxlength="120" value="${esc(estado.usuario ? estado.usuario.email : '')}">
+      <div class="hoja-acciones">
+        <button class="btn-ghost" type="button" data-accion="cerrar">${t('Cancelar')}</button>
+        <button class="btn-primary" type="submit">${t('Enviar')}</button>
+      </div>
+    </form>`);
 }
 
 async function iniciarSesion(ruta, datos, saludo) {
@@ -526,10 +596,40 @@ async function iniciarSesion(ruta, datos, saludo) {
   renderCuenta();
   cerrarHoja();
   await cargarListas();
-  const extra = r.listasAgregadas ? ` Pasamos ${r.listasAgregadas} lista${r.listasAgregadas === 1 ? '' : 's'} de este dispositivo a tu cuenta.` : '';
+  const extra = r.listasAgregadas
+    ? ' ' + (r.listasAgregadas === 1 ? t('Pasamos 1 lista de este dispositivo a tu cuenta.') : t('Pasamos {n} listas de este dispositivo a tu cuenta.', { n: r.listasAgregadas }))
+    : '';
   estado.gastos = null; // el historial cambia de dueño
   if (document.body.dataset.vista === 'gastos') cargarGastos();
-  avisar(`${saludo || `👋 ¡Hola, ${r.usuario.nombre.split(' ')[0]}!`}${extra}`);
+  if (document.body.dataset.vista === 'ajustes') renderAjustes();
+  avisar(`${saludo || t('👋 ¡Hola, {nombre}!', { nombre: r.usuario.nombre.split(' ')[0] })}${extra}`);
+}
+
+/* Sale de la cuenta en este dispositivo (las listas quedan guardadas en la cuenta) */
+async function salirDeLaCuenta(mensaje) {
+  guardarLS(LS_TOKEN, null);
+  guardarLS(LS_ACTIVA, null);
+  estado.usuario = null;
+  estado.gastos = null;
+  renderCuenta();
+  cerrarHoja();
+  await cargarListas();
+  if (document.body.dataset.vista === 'gastos') cargarGastos();
+  if (document.body.dataset.vista === 'ajustes') renderAjustes();
+  avisar(mensaje);
+}
+
+function renderCuenta() {
+  const btn = $('#btn-cuenta');
+  if (!btn) return;
+  if (estado.usuario) {
+    const nombre = estado.usuario.nombre.split(' ')[0];
+    btn.innerHTML = `<span class="avatar">${esc(nombre.charAt(0).toUpperCase())}</span><span class="cuenta-txt">${esc(nombre)}</span>`;
+    btn.setAttribute('aria-label', t('Mi cuenta ({nombre})', { nombre: estado.usuario.nombre }));
+  } else {
+    btn.innerHTML = `<span class="avatar vacio-av">👤</span><span class="cuenta-txt">${t('Entrar')}</span>`;
+    btn.setAttribute('aria-label', t('Entrar o crear cuenta (opcional)'));
+  }
 }
 
 function hojaOpciones() {
@@ -537,25 +637,58 @@ function hojaOpciones() {
   abrirHoja(`
     <h2>${esc(estado.lista.nombre)}</h2>
     <div class="menu-opciones">
-      <button class="btn-ghost" data-accion="presupuesto">💰 Cambiar presupuesto</button>
-      <button class="btn-ghost" data-accion="renombrar">✏️ Cambiar nombre</button>
-      <button class="btn-ghost" data-accion="duplicar">🔁 Duplicar para reutilizarla</button>
-      ${itemsValidos().length ? '<button class="btn-ghost" data-accion="registrar-compra">✅ Terminé mi compra (guardar el gasto)</button>' : ''}
-      <button class="btn-ghost" data-accion="desmarcar">↩️ Desmarcar todo (empezar de nuevo)</button>
-      ${estado.instalar ? '<button class="btn-ghost" data-accion="instalar">📲 Instalar Mi Súper en este dispositivo</button>' : ''}
-      <button class="btn-ghost btn-peligro" data-accion="confirmar-eliminar">🗑️ Eliminar lista</button>
-      <button class="btn-ghost" data-accion="cerrar">Cerrar</button>
+      ${itemsValidos().length ? `<button class="btn-ghost" data-accion="compartir">📤 ${t('Compartir por WhatsApp')}</button>` : ''}
+      <button class="btn-ghost" data-accion="presupuesto">💰 ${t('Cambiar presupuesto')}</button>
+      <button class="btn-ghost" data-accion="renombrar">✏️ ${t('Cambiar nombre')}</button>
+      <button class="btn-ghost" data-accion="duplicar">🔁 ${t('Duplicar para reutilizarla')}</button>
+      ${itemsValidos().length ? `<button class="btn-ghost" data-accion="registrar-compra">✅ ${t('Terminé mi compra (guardar el gasto)')}</button>` : ''}
+      <button class="btn-ghost" data-accion="desmarcar">↩️ ${t('Desmarcar todo (empezar de nuevo)')}</button>
+      ${estado.instalar ? `<button class="btn-ghost" data-accion="instalar">📲 ${t('Instalar Mi Súper en este dispositivo')}</button>` : ''}
+      <button class="btn-ghost btn-peligro" data-accion="confirmar-eliminar">🗑️ ${t('Eliminar lista')}</button>
+      <button class="btn-ghost" data-accion="cerrar">${t('Cerrar')}</button>
     </div>`);
 }
 
 function hojaEliminar() {
   abrirHoja(`
-    <h2>¿Eliminar la lista?</h2>
-    <p>Se va a borrar "${esc(estado.lista.nombre)}" con todos sus productos. Esto no se puede deshacer.</p>
+    <h2>${t('¿Eliminar la lista?')}</h2>
+    <p>${t('Se va a borrar "{nombre}" con todos sus productos. Esto no se puede deshacer.', { nombre: esc(estado.lista.nombre) })}</p>
     <div class="hoja-acciones">
-      <button class="btn-ghost" data-accion="cerrar">Cancelar</button>
-      <button class="btn-primary" style="background:var(--red)" data-accion="eliminar">Sí, eliminar</button>
+      <button class="btn-ghost" data-accion="cerrar">${t('Cancelar')}</button>
+      <button class="btn-primary" style="background:var(--red)" data-accion="eliminar">${t('Sí, eliminar')}</button>
     </div>`);
+}
+
+/* ══════════════ COMPARTIR LA LISTA POR WHATSAPP ══════════════
+   Arma un texto con los productos, el mejor precio de cada uno y el total
+   en cada supermercado, y abre WhatsApp para mandarlo a quien quieras. */
+function textoParaCompartir() {
+  const lista = estado.lista;
+  const comp = estado.comparacion;
+  const lineas = [`🛒 *${lista.nombre}*`, ''];
+  for (const item of itemsValidos()) {
+    const prod = estado.porId.get(idDe(item.producto));
+    const mejor = prod ? mejorPrecio(prod) : null;
+    const precio = mejor ? ` — ${fmtC(mejor.precio * item.cantidad)} (${mejor.super})` : '';
+    lineas.push(`${item.comprado ? '✅' : '▫️'} ${item.cantidad} × ${item.producto.nombre}${precio}`);
+  }
+  if (comp && comp.porSupermercado.length) {
+    lineas.push('', `💰 ${t('Presupuesto')}: ${fmtC(lista.presupuesto)}`, `📊 ${t('Total en cada súper')}:`);
+    [...comp.porSupermercado].sort((a, b) => (b.completo - a.completo) || (a.total - b.total)).forEach(s => {
+      const marca = s.supermercado === comp.mejorSupermercado ? ' 🏆' : '';
+      const falta = s.completo ? '' : ` (${t('le faltan productos')})`;
+      lineas.push(`• ${s.supermercado}: ${fmtC(s.total)}${falta}${marca}`);
+    });
+    if (comp.mejorSupermercado) lineas.push('', t('👉 Más barato: {super}', { super: comp.mejorSupermercado }));
+  }
+  lineas.push('', t('Hecho con Mi Súper') + ' · ' + location.origin + location.pathname.replace(/app\.html$/, ''));
+  return lineas.join('\n');
+}
+
+function compartirLista() {
+  if (!estado.lista || !itemsValidos().length) return avisar(t('Agregá productos a tu lista primero'));
+  cerrarHoja();
+  window.open('https://wa.me/?text=' + encodeURIComponent(textoParaCompartir()), '_blank', 'noopener');
 }
 
 /* ══════════════ DIBUJAR LA PANTALLA ══════════════ */
@@ -576,33 +709,38 @@ function renderTodo() {
 function renderChips() {
   const presentes = Object.keys(CATEGORIAS).filter(c => estado.resumen[c] || estado.productos.some(p => p.categoria === c));
   const chip = (valor, texto) => `<button class="chip ${estado.categoria === valor ? 'activa' : ''}" data-accion="categoria" data-valor="${valor}" role="tab">${texto}</button>`;
-  $('#chips').innerHTML = chip('todas', '✨ Todos') + presentes.map(c => chip(c, `${CATEGORIAS[c].emoji} ${CATEGORIAS[c].nombre}`)).join('');
+  $('#chips').innerHTML = chip('todas', '✨ ' + t('Todos')) + presentes.map(c => chip(c, `${CATEGORIAS[c].emoji} ${nombreCategoria(c)}`)).join('');
 }
 
 function productosFiltrados() {
-  if (estado.resultados) return estado.resultados; // lo que encontró el servidor
+  if (estado.resultados) return estado.resultados; // lo que encontró el servidor (ya viene ordenado)
   const q = sinTildes(estado.busqueda.trim());
-  return estado.productos.filter(p =>
+  const lista = estado.productos.filter(p =>
     (estado.categoria === 'todas' || p.categoria === estado.categoria) &&
     (!q || sinTildes(p.nombre).includes(q))
   );
+  if (AJUSTES.orden === 'precio') {
+    const precio = p => (mejorPrecio(p) || { precio: Infinity }).precio;
+    return lista.sort((a, b) => precio(a) - precio(b));
+  }
+  return lista;
 }
 
 function celdasPrecio(p) {
   const mejor = mejorPrecio(p);
-  return ORDEN_SUPERS.map(nombre => {
+  return supersActivos().map(nombre => {
     const v = p.precios[nombre];
     const s = SUPERS[nombre];
     if (v === undefined) {
-      return `<div class="precio-celda no-disp"><span class="pc-super">${s.emoji} ${nombre}</span><span class="pc-valor">—</span><span class="pc-extra">No disponible</span></div>`;
+      return `<div class="precio-celda no-disp"><span class="pc-super">${s.emoji} ${nombre}</span><span class="pc-valor">—</span><span class="pc-extra">${t('No disponible')}</span></div>`;
     }
     const esMejor = mejor && v === mejor.precio;
     const antes = p.antes && p.antes[nombre];
-    const extra = esMejor ? '✓ Mejor precio' : antes ? `Antes ${fmtC(antes)}` : '&nbsp;';
+    const extra = esMejor ? t('✓ Mejor precio') : antes ? t('Antes {precio}', { precio: fmtC(antes) }) : '&nbsp;';
     return `<div class="precio-celda ${esMejor ? 'mejor' : ''} ${antes ? 'rebaja' : ''}">
       <span class="pc-super">${s.emoji} ${nombre}</span>
       <span class="pc-valor">${fmtC(v)}</span>
-      <span class="pc-extra">${esMejor && antes ? `✓ Mejor · antes ${fmtC(antes)}` : extra}</span>
+      <span class="pc-extra">${esMejor && antes ? t('✓ Mejor · antes {precio}', { precio: fmtC(antes) }) : extra}</span>
     </div>`;
   }).join('');
 }
@@ -611,31 +749,33 @@ function renderProductos() {
   const lista = productosFiltrados();
   if (!estado.productos.length) return;
   if (!lista.length) {
-    const que = estado.busqueda.trim() ? `"${esc(estado.busqueda)}"` : 'productos en esta sección';
-    $('#prod-grid').innerHTML = `<div class="vacio" style="grid-column:1/-1"><span class="vacio-ico">🔎</span><p>No encontramos ${que}.<br>Probá con otra palabra.</p></div>`;
+    const que = estado.busqueda.trim() ? `"${esc(estado.busqueda)}"` : t('productos en esta sección');
+    $('#prod-grid').innerHTML = `<div class="vacio" style="grid-column:1/-1"><span class="vacio-ico">🔎</span><p>${t('No encontramos {que}.', { que })}<br>${t('Probá con otra palabra.')}</p></div>`;
     return;
   }
   const verMas = estado.resultados && estado.hayMas
-    ? `<div style="grid-column:1/-1;text-align:center;padding:8px 0 16px"><button class="btn-ghost" data-accion="ver-mas">Ver más productos</button></div>`
+    ? `<div style="grid-column:1/-1;text-align:center;padding:8px 0 16px"><button class="btn-ghost" data-accion="ver-mas">${t('Ver más productos')}</button></div>`
     : '';
+  const columnas = `grid-template-columns:repeat(${supersActivos().length},1fr)`;
   $('#prod-grid').innerHTML = lista.map(p => {
     const cant = cantidadEnLista(p.id);
     const cat = CATEGORIAS[p.categoria] || CATEGORIAS.otros;
+    const nombre = esc(p.nombre);
     const accion = cant
-      ? `<div class="stepper mini" aria-label="${cant} en tu lista">
-           <button data-accion="menos" data-id="${p.id}" aria-label="Quitar uno">−</button>
+      ? `<div class="stepper mini" aria-label="${esc(t('{n} en tu lista', { n: cant }))}">
+           <button data-accion="menos" data-id="${p.id}" aria-label="${esc(t('Quitar uno'))}">−</button>
            <span class="cant">${cant}</span>
-           <button data-accion="mas" data-id="${p.id}" aria-label="Agregar uno">+</button>
+           <button data-accion="mas" data-id="${p.id}" aria-label="${esc(t('Agregar uno'))}">+</button>
          </div>`
-      : `<button class="btn-agregar" data-accion="agregar" data-id="${p.id}" aria-label="Agregar ${esc(p.nombre)} a mi lista">+ Agregar</button>`;
+      : `<button class="btn-agregar" data-accion="agregar" data-id="${p.id}" aria-label="${esc(t('Agregar {nombre} a mi lista', { nombre: p.nombre }))}">${t('+ Agregar')}</button>`;
     return `<article class="prod-card ${cant ? 'en-lista' : ''} ${estado.recienAgregado === p.id ? 'recien' : ''}">
       <div class="prod-top">
         <div class="prod-emoji" aria-hidden="true">${cat.emoji}</div>
-        <div class="prod-info"><div class="prod-nombre">${esc(p.nombre)}</div><div class="prod-cat">${cat.nombre}${cant ? ' · <span class="en-lista-txt">✓ En tu lista</span>' : ''}</div></div>
-        <button class="btn-historial" data-accion="historial" data-id="${p.id}" title="Ver cómo ha cambiado el precio" aria-label="Ver cómo ha cambiado el precio de ${esc(p.nombre)}">📈</button>
+        <div class="prod-info"><div class="prod-nombre">${nombre}</div><div class="prod-cat">${nombreCategoria(p.categoria)}${cant ? ` · <span class="en-lista-txt">${t('✓ En tu lista')}</span>` : ''}</div></div>
+        <button class="btn-historial" data-accion="historial" data-id="${p.id}" title="${esc(t('Ver cómo ha cambiado el precio'))}" aria-label="${esc(t('Ver cómo ha cambiado el precio de {nombre}', { nombre: p.nombre }))}">📈</button>
         <div class="prod-acc">${accion}</div>
       </div>
-      <div class="precios">${celdasPrecio(p)}</div>
+      <div class="precios" style="${columnas}">${celdasPrecio(p)}</div>
     </article>`;
   }).join('') + verMas;
 }
@@ -643,7 +783,7 @@ function renderProductos() {
 function renderSelector() {
   const sel = $('#selector-lista');
   if (!estado.listas.length) {
-    sel.innerHTML = '<option>Sin listas todavía</option>';
+    sel.innerHTML = `<option>${t('Sin listas todavía')}</option>`;
     sel.disabled = true;
     return;
   }
@@ -657,18 +797,18 @@ function renderResumen() {
   const caja = $('#resumen');
   if (!estado.lista) {
     caja.innerHTML = `<div class="tarjeta vacio"><span class="vacio-ico">📝</span>
-      <p>Todavía no tenés una lista.<br>Creala y poné tu presupuesto.</p>
-      <button class="btn-primary" data-accion="bienvenida">Crear mi lista</button></div>`;
+      <p>${t('Todavía no tenés una lista.')}<br>${t('Creala y poné tu presupuesto.')}</p>
+      <button class="btn-primary" data-accion="bienvenida">${t('Crear mi lista')}</button></div>`;
     return;
   }
   const pres = estado.lista.presupuesto;
   const comp = estado.comparacion;
-  const botonPres = `<button class="res-pres" data-accion="presupuesto" aria-label="Cambiar presupuesto">${fmtC(pres)} <small>✏️</small></button>`;
+  const botonPres = `<button class="res-pres" data-accion="presupuesto" aria-label="${esc(t('Cambiar presupuesto'))}">${fmtC(pres)} <small>✏️</small></button>`;
 
   if (!itemsValidos().length || !comp) {
     caja.innerHTML = `<div class="res-tarjeta">
-      <div class="res-fila"><span class="res-etq">Presupuesto</span>${botonPres}</div>
-      <p class="res-nota">Agregá productos y te decimos cuánto vas a gastar y en qué súper te alcanza mejor.</p>
+      <div class="res-fila"><span class="res-etq">${t('Presupuesto')}</span>${botonPres}</div>
+      <p class="res-nota">${t('Agregá productos y te decimos cuánto vas a gastar y en qué súper te alcanza mejor.')}</p>
     </div>`;
     return;
   }
@@ -678,18 +818,19 @@ function renderResumen() {
   const diferencia = pres - total;
   const pct = pres > 0 ? Math.min(100, (total / pres) * 100) : 100;
   const pasado = diferencia < 0;
-  const donde = mejor
-    ? `Comprando todo en <b>${SUPERS[mejor.supermercado]?.emoji || ''} ${mejor.supermercado}</b>, el más barato`
-    : 'Combinando supermercados (ninguno tiene todos tus productos)';
+  let donde;
+  if (mejor && comp.porSupermercado.length === 1) donde = t('Comprando todo en <b>{super}</b>', { super: `${SUPERS[mejor.supermercado]?.emoji || ''} ${mejor.supermercado}` });
+  else if (mejor) donde = t('Comprando todo en <b>{super}</b>, el más barato', { super: `${SUPERS[mejor.supermercado]?.emoji || ''} ${mejor.supermercado}` });
+  else donde = t('Combinando supermercados (ninguno tiene todos tus productos)');
   const ahorroExtra = mejor ? mejor.total - comp.combinado.total : 0;
 
   caja.innerHTML = `<div class="res-tarjeta">
-    <div class="res-fila"><span class="res-etq">Presupuesto</span>${botonPres}</div>
+    <div class="res-fila"><span class="res-etq">${t('Presupuesto')}</span>${botonPres}</div>
     <div class="res-total ${pasado ? 'pasado' : ''}" id="res-total">${fmtC(estado.totalPrevio || total)}</div>
     <div class="res-donde">${donde}</div>
     <div class="barra-pres" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}"><div id="res-barra" class="${pasado ? 'pasado' : ''}" style="width:${estado.pctPrevio}%"></div></div>
-    <div class="res-estado ${pasado ? 'mal' : 'ok'}">${pasado ? `✗ Te pasás por ${fmtC(-diferencia)}` : `✓ Te sobran ${fmtC(diferencia)}`}</div>
-    ${ahorroExtra >= 1 ? `<p class="res-nota">💡 Si combinás supermercados ahorrás ${fmtC(ahorroExtra)} más. <a href="#comparar" data-accion="ir" data-vista="comparar" style="color:var(--mint);font-weight:800">Ver cómo</a></p>` : ''}
+    <div class="res-estado ${pasado ? 'mal' : 'ok'}">${pasado ? t('✗ Te pasás por {monto}', { monto: fmtC(-diferencia) }) : t('✓ Te sobran {monto}', { monto: fmtC(diferencia) })}</div>
+    ${ahorroExtra >= 1 ? `<p class="res-nota">${t('💡 Si combinás supermercados ahorrás {monto} más.', { monto: fmtC(ahorroExtra) })} <a href="#comparar" data-accion="ir" data-vista="comparar" style="color:var(--mint);font-weight:800">${t('Ver cómo')}</a></p>` : ''}
   </div>`;
   contarNumero($('#res-total'), estado.totalPrevio || total, total);
   dosCuadros(() => { const b = $('#res-barra'); if (b) b.style.width = pct + '%'; });
@@ -707,32 +848,33 @@ function renderItems() {
   btnTerminar.hidden = items.length === 0;
   if (!items.length) {
     estado.itemsPrevios = new Set();
-    caja.innerHTML = `<div class="vacio"><span class="vacio-ico">🛒</span><p>Tu lista está vacía.<br>Agregá productos desde el catálogo.</p>
-      <button class="btn-ghost solo-movil" data-accion="ir" data-vista="productos">Ver productos</button></div>`;
+    caja.innerHTML = `<div class="vacio"><span class="vacio-ico">🛒</span><p>${t('Tu lista está vacía.')}<br>${t('Agregá productos desde el catálogo.')}</p>
+      <button class="btn-ghost solo-movil" data-accion="ir" data-vista="productos">${t('Ver productos')}</button></div>`;
     return;
   }
   const comprados = items.filter(i => i.comprado).length;
   const previos = estado.itemsPrevios; // null = lista recién abierta: no se marca nada como "nuevo"
   const ordenados = [...items].sort((a, b) => (a.comprado - b.comprado) || a.producto.nombre.localeCompare(b.producto.nombre));
-  caja.innerHTML = `<div class="items-titulo"><span>${items.length} producto${items.length === 1 ? '' : 's'}</span><span>${comprados} en el carrito</span></div>` +
+  const cuantos = items.length === 1 ? t('1 producto') : t('{n} productos', { n: items.length });
+  caja.innerHTML = `<div class="items-titulo"><span>${cuantos}</span><span>${t('{n} en el carrito', { n: comprados })}</span></div>` +
     ordenados.map(item => {
       const id = idDe(item.producto);
       const prod = estado.porId.get(id);
       const mejor = prod ? mejorPrecio(prod) : null;
       const detalle = mejor
-        ? `<b>${fmtC(mejor.precio)}</b> en ${mejor.super}${item.cantidad > 1 ? ` · ${item.cantidad} = ${fmtC(mejor.precio * item.cantidad)}` : ''}`
-        : 'Sin precio hoy';
+        ? `${t('<b>{precio}</b> en {super}', { precio: fmtC(mejor.precio), super: mejor.super })}${item.cantidad > 1 ? ` · ${item.cantidad} = ${fmtC(mejor.precio * item.cantidad)}` : ''}`
+        : t('Sin precio hoy');
       const nuevo = previos && !previos.has(id) ? 'nuevo' : '';
       return `<div class="item ${item.comprado ? 'comprado' : ''} ${nuevo}">
-        <button class="check ${item.comprado ? 'on' : ''}" data-accion="comprado" data-id="${id}" aria-label="${item.comprado ? 'Desmarcar' : 'Marcar como comprado'}">${item.comprado ? '✓' : ''}</button>
+        <button class="check ${item.comprado ? 'on' : ''}" data-accion="comprado" data-id="${id}" aria-label="${esc(item.comprado ? t('Desmarcar') : t('Marcar como comprado'))}">${item.comprado ? '✓' : ''}</button>
         <div class="item-info"><div class="item-nombre">${esc(item.producto.nombre)}</div><div class="item-precio">${detalle}</div></div>
         <div class="item-der">
           <div class="stepper">
-            <button data-accion="menos" data-id="${id}" aria-label="Quitar uno">−</button>
+            <button data-accion="menos" data-id="${id}" aria-label="${esc(t('Quitar uno'))}">−</button>
             <span class="cant">${item.cantidad}</span>
-            <button data-accion="mas" data-id="${id}" aria-label="Agregar uno">+</button>
+            <button data-accion="mas" data-id="${id}" aria-label="${esc(t('Agregar uno'))}">+</button>
           </div>
-          <button class="quitar" data-accion="quitar" data-id="${id}">Quitar</button>
+          <button class="quitar" data-accion="quitar" data-id="${id}">${t('Quitar')}</button>
         </div>
       </div>`;
     }).join('');
@@ -743,41 +885,43 @@ function renderComparar() {
   const caja = $('#comparar-cuerpo');
   const comp = estado.comparacion;
   if (!estado.lista || !comp || !itemsValidos().length) {
-    $('#comparar-sub').textContent = 'El total de tu lista en cada supermercado.';
+    $('#comparar-sub').textContent = t('El total de tu lista en cada supermercado.');
     caja.innerHTML = `<div class="tarjeta vacio"><span class="vacio-ico">📊</span>
-      <p>Agregá productos a tu lista y acá vas a ver<br>cuánto cuesta en cada supermercado.</p>
-      <button class="btn-primary" data-accion="ir" data-vista="productos">Agregar productos</button></div>`;
+      <p>${t('Agregá productos a tu lista y acá vas a ver')}<br>${t('cuánto cuesta en cada supermercado.')}</p>
+      <button class="btn-primary" data-accion="ir" data-vista="productos">${t('Agregar productos')}</button></div>`;
     return;
   }
   const pres = estado.lista.presupuesto;
-  $('#comparar-sub').innerHTML = `Lista "<b>${esc(estado.lista.nombre)}</b>" · ${comp.lista.cantidadProductos} productos · Presupuesto <b>${fmtC(pres)}</b>`;
+  $('#comparar-sub').innerHTML = t('Lista "<b>{nombre}</b>" · {n} productos · Presupuesto <b>{monto}</b>', {
+    nombre: esc(estado.lista.nombre), n: comp.lista.cantidadProductos, monto: fmtC(pres)
+  });
 
   const ordenados = [...comp.porSupermercado].sort((a, b) => (b.completo - a.completo) || (a.total - b.total));
   const tarjetas = ordenados.map(s => {
     const info = SUPERS[s.supermercado] || { emoji: '🏪', color: '#1db96a' };
-    const ganador = s.supermercado === comp.mejorSupermercado;
+    const ganador = s.supermercado === comp.mejorSupermercado && comp.porSupermercado.length > 1;
     const pct = pres > 0 ? Math.min(100, (s.total / pres) * 100) : 100;
     const pasado = s.total > pres;
     let estadoTxt;
-    if (!s.completo) estadoTxt = `<div class="cs-estado mal">No tiene todos tus productos</div>`;
-    else estadoTxt = `<div class="cs-estado ${pasado ? 'mal' : 'ok'}">${pasado ? `✗ Te pasás por ${fmtC(s.total - pres)}` : `✓ Te sobran ${fmtC(pres - s.total)}`}</div>`;
+    if (!s.completo) estadoTxt = `<div class="cs-estado mal">${t('No tiene todos tus productos')}</div>`;
+    else estadoTxt = `<div class="cs-estado ${pasado ? 'mal' : 'ok'}">${pasado ? t('✗ Te pasás por {monto}', { monto: fmtC(s.total - pres) }) : t('✓ Te sobran {monto}', { monto: fmtC(pres - s.total) })}</div>`;
     return `<div class="comp-super ${ganador ? 'ganador' : ''}">
       <div class="cs-cabeza">
         <div class="cs-logo" style="background:${info.color}22;color:${info.color}">${info.emoji}</div>
         <div class="cs-nombre">${s.supermercado}</div>
-        ${ganador ? '<span class="cs-ganador">🏆 Más barato</span>' : ''}
+        ${ganador ? `<span class="cs-ganador">${t('🏆 Más barato')}</span>` : ''}
       </div>
       <div class="cs-total" style="color:${info.color}">${fmtC(s.total)}</div>
       ${estadoTxt}
       <div class="barra-pres"><div class="${pasado ? 'pasado' : ''}" data-pct="${pct}" style="width:0%"></div></div>
-      ${s.faltantes.length ? `<div class="cs-falta">Sin precio aquí: ${s.faltantes.map(esc).join(', ')}</div>` : ''}
+      ${s.faltantes.length ? `<div class="cs-falta">${t('Sin precio aquí:')} ${s.faltantes.map(esc).join(', ')}</div>` : ''}
     </div>`;
   }).join('');
 
-  // Plan combinado agrupado por supermercado
+  // Plan combinado agrupado por supermercado (solo tiene sentido con 2 o más)
   const grupos = {};
   comp.combinado.detalle.forEach(d => {
-    const clave = d.supermercado || 'Sin precio';
+    const clave = d.supermercado || t('Sin precio');
     (grupos[clave] = grupos[clave] || []).push(d);
   });
   const mejor = comp.porSupermercado.find(s => s.supermercado === comp.mejorSupermercado);
@@ -789,16 +933,105 @@ function renderComparar() {
       ${lineas.map(l => `<div class="ruta-item"><span>${esc(l.producto)} × ${l.cantidad}</span><span>${l.precio ? fmtC(l.subtotal) : '—'}</span></div>`).join('')}
     </div>`;
   }).join('');
+  const combinado = comp.porSupermercado.length > 1 ? `
+    <div class="combinado">
+      <h2>${t('🧭 Plan para gastar lo mínimo: {monto}', { monto: fmtC(comp.combinado.total) })}</h2>
+      <p class="sub">${t('Comprando cada producto donde está más barato')}${ahorro >= 1 ? ' ' + t('ahorrás <b style="color:var(--mint)">{monto}</b> frente a {super}', { monto: fmtC(ahorro), super: comp.mejorSupermercado }) : ''}. ${t('Vale la pena si te queda cerca ir a más de un súper.')}</p>
+      ${rutas}
+    </div>` : '';
 
   caja.innerHTML = `
     <div class="comp-lista">${tarjetas}</div>
-    <div class="combinado">
-      <h2>🧭 Plan para gastar lo mínimo: ${fmtC(comp.combinado.total)}</h2>
-      <p class="sub">Comprando cada producto donde está más barato${ahorro >= 1 ? ` ahorrás <b style="color:var(--mint)">${fmtC(ahorro)}</b> frente a ${comp.mejorSupermercado}` : ''}. Vale la pena si te queda cerca ir a más de un súper.</p>
-      ${rutas}
-    </div>
-    <p class="aviso-precios">Precios de referencia tomados de las tiendas en línea; pueden variar en sucursal.<br>Mi Súper no está afiliada a La Colonia, La Unión ni Walmart.</p>`;
+    ${combinado}
+    <p class="aviso-precios">${t('Precios de referencia tomados de las tiendas en línea; pueden variar en sucursal.')}<br>${t('Mi Súper no está afiliada a La Colonia, La Unión ni Walmart.')}</p>
+    <p style="text-align:center;margin-top:10px"><button class="btn-ghost" data-accion="compartir">📤 ${t('Compartir por WhatsApp')}</button></p>`;
   dosCuadros(() => caja.querySelectorAll('[data-pct]').forEach(b => { b.style.width = b.dataset.pct + '%'; }));
+}
+
+/* ══════════════ AJUSTES ══════════════ */
+const VERSION_APP = '1.4.0';
+
+// Botones de opciones: [valor, texto]
+function segmento(accion, actual, opciones, etiqueta) {
+  return `<div class="segmento" role="group" aria-label="${esc(etiqueta)}">${opciones.map(([valor, texto]) =>
+    `<button type="button" data-accion="${accion}" data-valor="${valor}" aria-pressed="${String(valor) === String(actual)}">${texto}</button>`).join('')}</div>`;
+}
+
+function fila(titulo, nota, control) {
+  return `<div class="aj-fila"><div class="aj-texto"><div class="aj-titulo">${titulo}</div>${nota ? `<div class="aj-nota">${nota}</div>` : ''}</div>${control}</div>`;
+}
+
+function renderAjustes() {
+  const caja = $('#ajustes-cuerpo');
+  if (!caja) return;
+  const tema = window.temaGuardado ? window.temaGuardado() : 'dark';
+  const info = estado.info || {};
+  const u = estado.usuario;
+
+  const apariencia = `<div class="aj-grupo">
+    <h2>🌐 ${t('Apariencia')}</h2>
+    ${fila(t('Idioma'), t('Los nombres de los productos siguen en español, como vienen de las tiendas.'),
+      segmento('aj-idioma', AJUSTES.idioma, [['es', 'Español'], ['en', 'English']], t('Idioma')))}
+    ${fila(t('Tema'), t('Automático usa el mismo modo que tu celular.'),
+      segmento('aj-tema', tema, [['light', '☀️ ' + t('Claro')], ['dark', '🌙 ' + t('Oscuro')], ['auto', '📱 ' + t('Automático')]], t('Tema')))}
+    ${fila(t('Tamaño de letra'), '', segmento('aj-letra', AJUSTES.letra, [['normal', t('Normal')], ['grande', t('Grande')]], t('Tamaño de letra')))}
+  </div>`;
+
+  const compras = `<div class="aj-grupo">
+    <h2>🛒 ${t('Mis compras')}</h2>
+    <div class="aj-fila"><div class="aj-texto"><div class="aj-titulo">${t('Mis supermercados')}</div>
+      <div class="aj-nota">${t('Elegí los que te quedan cerca. Solo esos se comparan y se recomiendan.')}</div></div>
+      <div class="aj-supers">${ORDEN_SUPERS.map(n => `<label class="aj-super"><input type="checkbox" data-aj-super="${esc(n)}" ${supersActivos().includes(n) ? 'checked' : ''}> ${SUPERS[n].emoji} ${n}</label>`).join('')}</div>
+    </div>
+    ${fila(t('Presupuesto inicial'), t('El monto que se pone solo al crear una lista nueva.'),
+      `<form data-form="aj-presupuesto" style="display:flex;gap:8px;align-items:center"><input class="campo" name="presupuesto" inputmode="numeric" value="${AJUSTES.presupuesto}" aria-label="${esc(t('Presupuesto inicial'))}"><button class="btn-ghost" type="submit">${t('Guardar')}</button></form>`)}
+    ${fila(t('Ordenar productos por'), '', segmento('aj-orden', AJUSTES.orden, [['nombre', t('Nombre A-Z')], ['precio', t('Más barato primero')]], t('Ordenar productos por')))}
+  </div>`;
+
+  const compartir = `<div class="aj-grupo">
+    <h2>📤 ${t('Compartir')}</h2>
+    ${fila(t('Compartir lista por WhatsApp'),
+      estado.lista ? t('Manda "{nombre}" con los precios y el súper más barato.', { nombre: esc(estado.lista.nombre) }) : t('Primero creá una lista.'),
+      `<button class="btn-ghost" data-accion="compartir" ${estado.lista && itemsValidos().length ? '' : 'disabled'}>📤 ${t('Compartir')}</button>`)}
+  </div>`;
+
+  const cuenta = u ? `<div class="aj-grupo">
+    <h2>👤 ${t('Cuenta')}</h2>
+    ${fila(esc(u.nombre), esc(u.email), `<button class="btn-ghost" data-accion="aj-nombre">✏️ ${t('Cambiar nombre')}</button>`)}
+    ${fila(t('Contraseña'), '', `<button class="btn-ghost" data-accion="aj-clave">🔑 ${t('Cambiar contraseña')}</button>`)}
+    ${fila(t('Cerrar sesión'), t('Tus listas quedan guardadas en tu cuenta.'), `<button class="btn-ghost" data-accion="cerrar-sesion">🚪 ${t('Cerrar sesión')}</button>`)}
+    ${fila(t('Eliminar mi cuenta'), t('Borra tu cuenta, tus listas y tu historial de gastos.'), `<button class="btn-ghost btn-peligro-txt" data-accion="aj-eliminar-cuenta">🗑️ ${t('Eliminar')}</button>`)}
+  </div>` : `<div class="aj-grupo">
+    <h2>👤 ${t('Cuenta')}</h2>
+    ${fila(t('Usás Mi Súper sin cuenta'), t('Con una cuenta (opcional) ves tus listas en todos tus dispositivos.'), `<button class="btn-ghost" data-accion="cuenta" data-modo="entrar">${t('Entrar o crear cuenta')}</button>`)}
+  </div>`;
+
+  const acerca = `<div class="aj-grupo">
+    <h2>ℹ️ ${t('Acerca de')}</h2>
+    <div class="aj-info">
+      <b>${t('Precios actualizados')}:</b> ${info.ultimaActualizacionDePrecios ? fechaAmigable(info.ultimaActualizacionDePrecios) : t('sin datos')}<br>
+      <b>${t('Productos')}:</b> ${(info.productos || 0).toLocaleString(LOCALE())} · <b>${t('Versión')}:</b> ${VERSION_APP}<br>
+      ${t('Los precios se toman de las tiendas en línea y pueden variar en sucursal.')}<br>
+      ${t('Mi Súper no está afiliada a La Colonia, La Unión ni Walmart.')}
+    </div>
+    ${fila(t('¿Viste un precio incorrecto?'), t('Avisanos y lo revisamos.'), `<button class="btn-ghost" data-accion="reportar">🚩 ${t('Reportar')}</button>`)}
+  </div>`;
+
+  const accesibilidad = `<div class="aj-grupo">
+    <h2>♿ ${t('Accesibilidad')}</h2>
+    ${fila(t('Reducir animaciones'), t('Quita los movimientos y transiciones de la app.'),
+      segmento('aj-movimiento', AJUSTES.movimiento, [['auto', t('Como el celular')], ['reducido', t('Reducir')]], t('Reducir animaciones')))}
+  </div>`;
+
+  caja.innerHTML = `<div class="ajustes">${apariencia}${compras}${compartir}${cuenta}${acerca}${accesibilidad}</div>`;
+}
+
+/* Cuando cambian "Mis supermercados" u "Ordenar por": volver a pedir y dibujar todo */
+async function refrescarPorAjustes() {
+  $('#sub-productos').textContent = ($('#actualizado').textContent || '') + ' · ' + listaDeNombres(supersActivos());
+  await actualizarComparacion();
+  renderTodo();
+  if (estado.resultados) await buscarProductos();
 }
 
 /* ══════════════ TOOLTIP DE LAS GRÁFICAS ══════════════ */
@@ -844,10 +1077,10 @@ function barraRedondeada(x, y, w, h, r = 4) {
 }
 
 /* ══════════════ MIS GASTOS (historial por mes) ══════════════ */
-const FMT_MES_CORTO = new Intl.DateTimeFormat('es-NI', { month: 'short' });
-const FMT_MES_LARGO = new Intl.DateTimeFormat('es-NI', { month: 'long', year: 'numeric' });
-const FMT_DIA = new Intl.DateTimeFormat('es-NI', { day: 'numeric', month: 'short' });
-const FMT_DIA_ANIO = new Intl.DateTimeFormat('es-NI', { day: 'numeric', month: 'short', year: 'numeric' });
+const FMT_MES_CORTO = new Intl.DateTimeFormat(LOCALE(), { month: 'short' });
+const FMT_MES_LARGO = new Intl.DateTimeFormat(LOCALE(), { month: 'long', year: 'numeric' });
+const FMT_DIA = new Intl.DateTimeFormat(LOCALE(), { day: 'numeric', month: 'short' });
+const FMT_DIA_ANIO = new Intl.DateTimeFormat(LOCALE(), { day: 'numeric', month: 'short', year: 'numeric' });
 const mayuscula = t => t.charAt(0).toUpperCase() + t.slice(1);
 
 // "2026-11" en hora de Nicaragua (igual que el servidor)
@@ -874,43 +1107,43 @@ function hoyISO() {
 
 /* "Terminé mi compra": guarda el gasto en el historial */
 function hojaRegistrarCompra() {
-  if (!estado.lista || !itemsValidos().length) return avisar('Agregá productos a tu lista primero');
+  if (!estado.lista || !itemsValidos().length) return avisar(t('Agregá productos a tu lista primero'));
   const comp = estado.comparacion;
   // Opciones: los súper con todos los productos (del más barato al más caro), después "Varios"
   const opciones = [];
   if (comp) {
     [...comp.porSupermercado].filter(s => s.completo).sort((a, b) => a.total - b.total)
       .forEach(s => opciones.push({ valor: s.supermercado, total: s.total }));
-    opciones.push({ valor: 'Varios', texto: 'Varios supermercados', total: comp.combinado.total });
+    if (comp.porSupermercado.length > 1) opciones.push({ valor: 'Varios', texto: t('Varios supermercados'), total: comp.combinado.total });
   }
-  ORDEN_SUPERS.forEach(n => { if (!opciones.some(o => o.valor === n)) opciones.push({ valor: n, total: null }); });
-  if (!opciones.some(o => o.valor === 'Varios')) opciones.push({ valor: 'Varios', texto: 'Varios supermercados', total: null });
+  supersActivos().forEach(n => { if (!opciones.some(o => o.valor === n)) opciones.push({ valor: n, total: null }); });
+  if (!opciones.some(o => o.valor === 'Varios')) opciones.push({ valor: 'Varios', texto: t('Varios supermercados'), total: null });
 
   const primera = opciones[0];
   abrirHoja(`
     <form data-form="compra">
-      <h2>✅ Terminé mi compra</h2>
-      <p>Guardamos cuánto gastaste en "${esc(estado.lista.nombre)}" para tu historial de gastos por mes.</p>
-      <label for="f-super">¿Dónde compraste?</label>
+      <h2>${t('✅ Terminé mi compra')}</h2>
+      <p>${t('Guardamos cuánto gastaste en "{nombre}" para tu historial de gastos por mes.', { nombre: esc(estado.lista.nombre) })}</p>
+      <label for="f-super">${t('¿Dónde compraste?')}</label>
       <select class="campo" id="f-super" name="supermercado" data-cambia-super>
-        ${opciones.map(o => `<option value="${esc(o.valor)}" data-total="${o.total ?? ''}">${SUPERS[o.valor]?.emoji || '🧭'} ${esc(o.texto || o.valor)}${o.total ? ` · aprox. ${fmtC(o.total)}` : ''}</option>`).join('')}
+        ${opciones.map(o => `<option value="${esc(o.valor)}" data-total="${o.total ?? ''}">${SUPERS[o.valor]?.emoji || '🧭'} ${esc(o.texto || o.valor)}${o.total ? ` · ${t('aprox.')} ${fmtC(o.total)}` : ''}</option>`).join('')}
       </select>
-      <label for="f-total">¿Cuánto pagaste? (C$)</label>
+      <label for="f-total">${t('¿Cuánto pagaste? (C$)')}</label>
       <input class="campo" id="f-total" name="total" inputmode="decimal" value="${primera.total ?? ''}" required>
-      <p class="nota-campo">Lo calculamos con los precios en línea de hoy. Si tu factura dice otra cosa, cambialo.</p>
-      <label for="f-fecha">Fecha</label>
+      <p class="nota-campo">${t('Lo calculamos con los precios en línea de hoy. Si tu factura dice otra cosa, cambialo.')}</p>
+      <label for="f-fecha">${t('Fecha')}</label>
       <input class="campo" id="f-fecha" name="fecha" type="date" value="${hoyISO()}" max="${hoyISO()}" required>
-      <label class="ver-pass"><input type="checkbox" name="desmarcar" checked> Desmarcar la lista para la próxima compra</label>
+      <label class="ver-pass"><input type="checkbox" name="desmarcar" checked> ${t('Desmarcar la lista para la próxima compra')}</label>
       <div class="hoja-acciones">
-        <button class="btn-ghost" type="button" data-accion="cerrar">Cancelar</button>
-        <button class="btn-primary" type="submit">Guardar gasto</button>
+        <button class="btn-ghost" type="button" data-accion="cerrar">${t('Cancelar')}</button>
+        <button class="btn-primary" type="submit">${t('Guardar gasto')}</button>
       </div>
     </form>`);
 }
 
 async function registrarCompra(datos) {
   const total = numero(datos.total);
-  if (!(total > 0)) return avisar('Escribí cuánto pagaste');
+  if (!(total > 0)) return avisar(t('Escribí cuánto pagaste'));
   const lista = estado.lista;
   await api('/api/compras', {
     method: 'POST',
@@ -931,18 +1164,18 @@ async function registrarCompra(datos) {
     const nueva = await api(`/api/listas/${lista._id}`, { method: 'PUT', body: { desmarcarTodo: true } });
     await trasCambio(nueva);
   }
-  avisar(`📅 Gasto de ${fmtC(total)} guardado. Miralo en "Gastos".`);
+  avisar(t('📅 Gasto de {monto} guardado. Miralo en "Gastos".', { monto: fmtC(total) }));
 }
 
 function hojaBorrarCompra(id) {
   const c = estado.gastos && estado.gastos.compras.find(x => x._id === id);
   if (!c) return;
   abrirHoja(`
-    <h2>¿Borrar esta compra?</h2>
-    <p>"${esc(c.nombre)}" del ${FMT_DIA.format(new Date(c.fecha))} por ${fmtC(c.total)} se va a quitar de tu historial.</p>
+    <h2>${t('¿Borrar esta compra?')}</h2>
+    <p>${t('"{nombre}" del {fecha} por {monto} se va a quitar de tu historial.', { nombre: esc(c.nombre), fecha: FMT_DIA.format(new Date(c.fecha)), monto: fmtC(c.total) })}</p>
     <div class="hoja-acciones">
-      <button class="btn-ghost" data-accion="cerrar">Cancelar</button>
-      <button class="btn-primary" style="background:var(--red)" data-accion="borrar-compra" data-id="${esc(id)}">Sí, borrar</button>
+      <button class="btn-ghost" data-accion="cerrar">${t('Cancelar')}</button>
+      <button class="btn-primary" style="background:var(--red)" data-accion="borrar-compra" data-id="${esc(id)}">${t('Sí, borrar')}</button>
     </div>`);
 }
 
@@ -956,7 +1189,7 @@ async function cargarGastos() {
       renderGastos();
     } catch {
       $('#gastos-cuerpo').innerHTML = `<div class="tarjeta vacio"><span class="vacio-ico">📡</span>
-        <p>No pudimos cargar tu historial.</p><button class="btn-ghost" data-accion="ir" data-vista="gastos">Reintentar</button></div>`;
+        <p>${t('No pudimos cargar tu historial.')}</p><button class="btn-ghost" data-accion="ir" data-vista="gastos">${t('Reintentar')}</button></div>`;
     } finally {
       cargandoGastos = null;
     }
@@ -969,8 +1202,8 @@ function renderGastos() {
   const g = estado.gastos;
   if (!g || !g.compras.length) {
     caja.innerHTML = `<div class="tarjeta vacio"><span class="vacio-ico">📅</span>
-      <p>Todavía no guardaste ninguna compra.<br>Cuando termines de comprar, tocá <b>"✅ Terminé mi compra"</b> en tu lista y acá vas a ver cuánto gastás cada mes.</p>
-      <button class="btn-primary" data-accion="ir" data-vista="lista">Ir a mi lista</button></div>`;
+      <p>${t('Todavía no guardaste ninguna compra.')}<br>${t('Cuando termines de comprar, tocá <b>"✅ Terminé mi compra"</b> en tu lista y acá vas a ver cuánto gastás cada mes.')}</p>
+      <button class="btn-primary" data-accion="ir" data-vista="lista">${t('Ir a mi lista')}</button></div>`;
     return;
   }
 
@@ -986,17 +1219,17 @@ function renderGastos() {
   let comparacionTxt = '';
   if (promedio && totalDe(actual)) {
     const pct = Math.round((totalDe(actual) / promedio) * 100);
-    comparacionTxt = `Llevás el ${pct}% de lo que gastás en un mes normal`;
+    comparacionTxt = t('Llevás el {pct}% de lo que gastás en un mes normal', { pct });
   }
 
   const tiles = `
     <div class="tiles">
-      <div class="tile destacado"><span class="tile-etq">Este mes</span><span class="tile-valor">${fmtC(totalDe(actual))}</span>
-        <span class="tile-nota">${comprasMes} compra${comprasMes === 1 ? '' : 's'}${comparacionTxt ? ' · ' + comparacionTxt : ''}</span></div>
+      <div class="tile destacado"><span class="tile-etq">${t('Este mes')}</span><span class="tile-valor">${fmtC(totalDe(actual))}</span>
+        <span class="tile-nota">${comprasMes === 1 ? t('1 compra') : t('{n} compras', { n: comprasMes })}${comparacionTxt ? ' · ' + comparacionTxt : ''}</span></div>
       <div class="tile"><span class="tile-etq">${nombreMes(pasado).split(' ')[0]}</span><span class="tile-valor">${porMes.has(pasado) ? fmtC(totalDe(pasado)) : '—'}</span>
-        <span class="tile-nota">Mes pasado</span></div>
-      <div class="tile"><span class="tile-etq">Promedio</span><span class="tile-valor">${promedio ? fmtC(Math.round(promedio)) : '—'}</span>
-        <span class="tile-nota">${promedio ? `por mes (${anteriores.length} mes${anteriores.length === 1 ? '' : 'es'})` : 'Se calcula desde el próximo mes'}</span></div>
+        <span class="tile-nota">${t('Mes pasado')}</span></div>
+      <div class="tile"><span class="tile-etq">${t('Promedio')}</span><span class="tile-valor">${promedio ? fmtC(Math.round(promedio)) : '—'}</span>
+        <span class="tile-nota">${promedio ? (anteriores.length === 1 ? t('por mes (1 mes)') : t('por mes ({n} meses)', { n: anteriores.length })) : t('Se calcula desde el próximo mes')}</span></div>
     </div>`;
 
   // Gráfica: desde el primer mes con datos (mínimo los últimos 6 meses)
@@ -1018,18 +1251,18 @@ function renderGastos() {
         let pres = '';
         if (c.presupuesto) {
           pres = c.total <= c.presupuesto
-            ? `<span class="ok">✓ dentro del presupuesto</span>`
-            : `<span class="mal">✗ ${fmtC(c.total - c.presupuesto)} sobre el presupuesto</span>`;
+            ? `<span class="ok">${t('✓ dentro del presupuesto')}</span>`
+            : `<span class="mal">${t('✗ {monto} sobre el presupuesto', { monto: fmtC(c.total - c.presupuesto) })}</span>`;
         }
         return `<div class="gasto-fila">
           <div class="gf-info">
             <div class="gf-nombre">${esc(c.nombre)}</div>
-            <div class="gf-detalle">${FMT_DIA.format(new Date(c.fecha))} · ${s ? s.emoji + ' ' : '🧭 '}${esc(c.supermercado)}${c.cantidadProductos ? ` · ${c.cantidadProductos} productos` : ''}</div>
+            <div class="gf-detalle">${FMT_DIA.format(new Date(c.fecha))} · ${s ? s.emoji + ' ' : '🧭 '}${esc(c.supermercado === 'Varios' ? t('Varios supermercados') : c.supermercado)}${c.cantidadProductos ? ` · ${t('{n} productos', { n: c.cantidadProductos })}` : ''}</div>
             ${pres ? `<div class="gf-detalle">${pres}</div>` : ''}
           </div>
           <div class="gf-der">
             <span class="gf-total">${fmtC(c.total)}</span>
-            <button class="quitar" data-accion="confirmar-borrar-compra" data-id="${esc(c._id)}" aria-label="Borrar esta compra del historial">Borrar</button>
+            <button class="quitar" data-accion="confirmar-borrar-compra" data-id="${esc(c._id)}" aria-label="${esc(t('Borrar esta compra del historial'))}">${t('Borrar')}</button>
           </div>
         </div>`;
       }).join('')}
@@ -1037,7 +1270,7 @@ function renderGastos() {
 
   caja.innerHTML = `${tiles}
     <div class="tarjeta grafica-tarjeta">
-      <h2 class="grafica-titulo">Gasto por mes</h2>
+      <h2 class="grafica-titulo">${t('Gasto por mes')}</h2>
       <div class="grafica" id="gastos-grafica">${graficaMeses(meses, totalDe, promedio, actual)}</div>
     </div>
     <div class="gastos-lista">${lista}</div>`;
@@ -1073,7 +1306,7 @@ function graficaMeses(meses, totalDe, promedio, actual) {
     const v = totalDe(k);
     const x = izq + banda * i + (banda - anchoBarra) / 2;
     const enCurso = k === actual;
-    const tip = `<b>${nombreMes(k)}</b><br>${v ? fmtC(v) : 'Sin compras guardadas'}${enCurso && v ? '<br><small>Mes en curso</small>' : ''}`;
+    const tip = `<b>${nombreMes(k)}</b><br>${v ? fmtC(v) : t('Sin compras guardadas')}${enCurso && v ? `<br><small>${t('Mes en curso')}</small>` : ''}`;
     return `<g data-tip="${esc(tip)}">
       <rect x="${izq + banda * i}" y="${arriba}" width="${banda}" height="${altoUtil}" fill="transparent"/>
       ${v > 0 ? `<path d="${barraRedondeada(x, y(v), anchoBarra, y(0) - y(v))}" class="g-barra ${enCurso ? 'en-curso' : ''}"/>` : ''}
@@ -1083,16 +1316,16 @@ function graficaMeses(meses, totalDe, promedio, actual) {
 
   const lineaPromedio = promedio
     ? `<line x1="${izq}" x2="${W - der}" y1="${y(promedio)}" y2="${y(promedio)}" class="g-promedio"/>
-       <text x="${W - der}" y="${y(promedio) - 6}" text-anchor="end" class="g-eje">promedio ${fmtCorto(promedio)}</text>`
+       <text x="${W - der}" y="${y(promedio) - 6}" text-anchor="end" class="g-eje">${t('promedio')} ${fmtCorto(promedio)}</text>`
     : '';
 
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Gasto por mes de los últimos ${meses.length} meses">
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(t('Gasto por mes de los últimos {n} meses', { n: meses.length }))}">
     ${lineas}${barras}${lineaPromedio}
   </svg>`;
 }
 
 /* ══════════════ GRÁFICA: CÓMO CAMBIA EL PRECIO ══════════════ */
-const RANGOS = { '1m': { dias: 30, texto: '1 mes' }, '3m': { dias: 90, texto: '3 meses' }, '6m': { dias: 180, texto: '6 meses' }, todo: { dias: null, texto: 'Todo' } };
+const RANGOS = { '1m': { dias: 30, texto: t('1 mes') }, '3m': { dias: 90, texto: t('3 meses') }, '6m': { dias: 180, texto: t('6 meses') }, todo: { dias: null, texto: t('Todo') } };
 const historialPrecio = { id: null, datos: null, rango: 'todo', series: null, t0: 0, t1: 0 };
 
 async function hojaHistorialPrecio(id) {
@@ -1104,12 +1337,15 @@ async function hojaHistorialPrecio(id) {
     `<button type="button" class="chip ${k === historialPrecio.rango ? 'activa' : ''}" data-accion="rango" data-valor="${k}" role="tab">${r.texto}</button>`).join('');
   abrirHoja(`
     <h2>📈 ${esc(p.nombre)}</h2>
-    <p class="hist-sub">Cómo ha cambiado el precio en cada supermercado.</p>
-    <div class="chips hist-rangos" role="tablist" aria-label="Periodo">${chips}</div>
-    <div class="grafica hist-grafica" id="hist-grafica"><div class="cargando">Cargando historial…</div></div>
+    <p class="hist-sub">${t('Cómo ha cambiado el precio en cada supermercado.')}</p>
+    <div class="chips hist-rangos" role="tablist" aria-label="${esc(t('Periodo'))}">${chips}</div>
+    <div class="grafica hist-grafica" id="hist-grafica"><div class="cargando">${t('Cargando historial…')}</div></div>
     <div id="hist-leyenda"></div>
     <div id="hist-tabla"></div>
-    <div class="hoja-acciones"><button class="btn-ghost" type="button" data-accion="cerrar">Cerrar</button></div>`);
+    <div class="hoja-acciones">
+      <button class="btn-ghost" type="button" data-accion="reportar" data-producto="${esc(p.nombre)}">🚩 ${t('Reportar precio')}</button>
+      <button class="btn-ghost" type="button" data-accion="cerrar">${t('Cerrar')}</button>
+    </div>`);
   try {
     const datos = await api(`/api/productos/${id}/historial`);
     if (historialPrecio.id !== id) return; // abrieron otro producto mientras cargaba
@@ -1117,7 +1353,7 @@ async function hojaHistorialPrecio(id) {
     dibujarHistorial(historialPrecio.rango);
   } catch {
     const caja = $('#hist-grafica');
-    if (caja && historialPrecio.id === id) caja.innerHTML = '<div class="vacio"><span class="vacio-ico">📡</span><p>No pudimos cargar el historial.</p></div>';
+    if (caja && historialPrecio.id === id) caja.innerHTML = `<div class="vacio"><span class="vacio-ico">📡</span><p>${t('No pudimos cargar el historial.')}</p></div>`;
   }
 }
 
@@ -1143,7 +1379,7 @@ function dibujarHistorial(rango) {
     .map(h => ({ s: h.supermercado, v: h.valor, t: new Date(h.fecha).getTime() }))
     .sort((a, b) => a.t - b.t);
   if (!registros.length) {
-    caja.innerHTML = '<div class="vacio"><span class="vacio-ico">🕒</span><p>Todavía no hay historial de este producto.<br>Revisamos los precios todos los días: volvé en unos días.</p></div>';
+    caja.innerHTML = `<div class="vacio"><span class="vacio-ico">🕒</span><p>${t('Todavía no hay historial de este producto.')}<br>${t('Revisamos los precios todos los días: volvé en unos días.')}</p></div>`;
     $('#hist-leyenda').innerHTML = '';
     $('#hist-tabla').innerHTML = '';
     return;
@@ -1155,7 +1391,7 @@ function dibujarHistorial(rango) {
   let t0 = Math.max(dias ? t1 - dias * 864e5 : primero, primero);
   if (t1 - t0 < 864e5) t0 = t1 - 864e5; // al menos 1 día de ancho
 
-  const series = ORDEN_SUPERS.map(nombre => {
+  const series = supersActivos().map(nombre => {
     const pts = registros.filter(r => r.s === nombre);
     if (!pts.length) return null;
     const previo = pts.filter(p => p.t <= t0).pop();
@@ -1188,7 +1424,7 @@ function dibujarHistorial(rango) {
   const largo = t1 - t0 > 300 * 864e5;
   const fechaEje = t => (largo ? FMT_DIA_ANIO : FMT_DIA).format(new Date(t)).replace('.', '');
   const ejeX = [[t0, 'start'], [(t0 + t1) / 2, 'middle'], [t1, 'end']].map(([t, ancla]) =>
-    `<text x="${x(t)}" y="${H - 6}" text-anchor="${ancla}" class="g-eje">${t === t1 ? 'Hoy' : fechaEje(t)}</text>`).join('');
+    `<text x="${x(t)}" y="${H - 6}" text-anchor="${ancla}" class="g-eje">${t === t1 ? window.t('Hoy') : fechaEje(t)}</text>`).join('');
 
   // Línea "en escalón": el precio se mantiene hasta el día que cambia
   const lineas = series.map(s => {
@@ -1202,7 +1438,7 @@ function dibujarHistorial(rango) {
       <circle cx="${x(ultimo.t)}" cy="${y(ultimo.v)}" r="4" class="g-punto" style="fill:${color}"/>`;
   }).join('');
 
-  caja.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Precio de ${esc(prod ? prod.nombre : 'producto')} en cada supermercado">
+  caja.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(t('Precio de {nombre} en cada supermercado', { nombre: prod ? prod.nombre : t('producto') }))}">
     ${rejilla}${ejeX}
     <line id="hist-cruz" class="g-cruz" x1="0" x2="0" y1="${arriba}" y2="${H - abajo}" visibility="hidden"/>
     ${lineas}
@@ -1232,17 +1468,17 @@ function dibujarHistorial(rango) {
   if (t1 - primero < 2 * 864e5) {
     caja.onpointermove = caja.onpointerdown = caja.onpointerleave = null;
     caja.innerHTML = `<div class="vacio hist-poco"><span class="vacio-ico">🕒</span>
-      <p>Empezamos a guardar este precio el ${FMT_DIA.format(new Date(primero))}.<br>En unos días vas a ver aquí cómo sube o baja.</p></div>`;
+      <p>${t('Empezamos a guardar este precio el {fecha}.', { fecha: FMT_DIA.format(new Date(primero)) })}<br>${t('En unos días vas a ver aquí cómo sube o baja.')}</p></div>`;
   }
 
   // Leyenda: nombre, precio de hoy y cuánto cambió en el periodo
   $('#hist-leyenda').innerHTML = `<div class="leyenda">${series.map(s => {
     const dif = Math.round((s.fin - s.inicio) * 100) / 100;
     const pct = s.inicio ? Math.round((dif / s.inicio) * 1000) / 10 : 0;
-    let cambio = '<span class="ley-cambio">= sin cambios</span>';
-    if (dif < 0) cambio = `<span class="ley-cambio baja">▼ bajó ${fmtC(-dif)} (${-pct}%)</span>`;
-    if (dif > 0) cambio = `<span class="ley-cambio sube">▲ subió ${fmtC(dif)} (+${pct}%)</span>`;
-    const agotado = s.hoy === undefined ? ' <span class="ley-cambio">· no disponible hoy</span>' : '';
+    let cambio = `<span class="ley-cambio">${t('= sin cambios')}</span>`;
+    if (dif < 0) cambio = `<span class="ley-cambio baja">${t('▼ bajó {monto} ({pct}%)', { monto: fmtC(-dif), pct: -pct })}</span>`;
+    if (dif > 0) cambio = `<span class="ley-cambio sube">${t('▲ subió {monto} (+{pct}%)', { monto: fmtC(dif), pct })}</span>`;
+    const agotado = s.hoy === undefined ? ` <span class="ley-cambio">${t('· no disponible hoy')}</span>` : '';
     return `<div class="ley-fila">
       <i class="ley-color" style="background:var(--serie-${SUPERS[s.nombre].slug})"></i>
       <span class="ley-nombre">${SUPERS[s.nombre].emoji} ${esc(s.nombre)}</span>
@@ -1250,13 +1486,13 @@ function dibujarHistorial(rango) {
       <span class="ley-detalle">${cambio}${agotado}</span>
     </div>`;
   }).join('')}</div>
-  <p class="nota-campo">Revisamos los precios todos los días y guardamos cada cambio desde el ${FMT_DIA_ANIO.format(new Date(primero))}.</p>`;
+  <p class="nota-campo">${t('Revisamos los precios todos los días y guardamos cada cambio desde el {fecha}.', { fecha: FMT_DIA_ANIO.format(new Date(primero)) })}</p>`;
 
   // Tabla con cada cambio (para leer los datos exactos)
   const cambios = registros.filter(r => r.t >= t0).reverse().slice(0, 60);
   $('#hist-tabla').innerHTML = cambios.length ? `<details class="hist-detalles">
-    <summary>Ver todos los cambios (${cambios.length})</summary>
-    <table class="hist-tabla"><thead><tr><th>Fecha</th><th>Supermercado</th><th>Precio</th></tr></thead><tbody>
+    <summary>${t('Ver todos los cambios ({n})', { n: cambios.length })}</summary>
+    <table class="hist-tabla"><thead><tr><th>${t('Fecha')}</th><th>${t('Supermercado')}</th><th>${t('Precio')}</th></tr></thead><tbody>
     ${cambios.map(r => `<tr><td>${FMT_DIA_ANIO.format(new Date(r.t))}</td><td>${esc(r.s)}</td><td>${fmtC(r.v)}</td></tr>`).join('')}
     </tbody></table></details>` : '';
 }
@@ -1269,7 +1505,7 @@ const acciones = {
     renderChips();
     buscarProductos().then(() => cascada($('#prod-grid')));
   },
-  'ver-mas': el => { el.disabled = true; el.textContent = 'Cargando…'; buscarProductos({ mas: true }); },
+  'ver-mas': el => { el.disabled = true; el.textContent = t('Cargando…'); buscarProductos({ mas: true }); },
   agregar: el => ejecutar(() => agregar(el.dataset.id)),
   mas: el => ejecutar(() => cambiarCantidad(el.dataset.id, +1)),
   menos: el => ejecutar(() => cambiarCantidad(el.dataset.id, -1)),
@@ -1289,20 +1525,38 @@ const acciones = {
     cerrarHoja();
     estado.gastos = null;
     await cargarGastos();
-    avisar('🗑️ Compra borrada del historial');
+    avisar(t('🗑️ Compra borrada del historial'));
   }),
   historial: el => hojaHistorialPrecio(el.dataset.id),
   rango: el => dibujarHistorial(el.dataset.valor),
-  'cerrar-sesion': () => ejecutar(async () => {
-    guardarLS(LS_TOKEN, null);
-    guardarLS(LS_ACTIVA, null);
-    estado.usuario = null;
-    estado.gastos = null;
-    renderCuenta();
-    cerrarHoja();
-    await cargarListas();
-    if (document.body.dataset.vista === 'gastos') cargarGastos();
-    avisar('Sesión cerrada. Tus listas siguen guardadas en tu cuenta.');
+  'cerrar-sesion': () => ejecutar(() => salirDeLaCuenta(t('Sesión cerrada. Tus listas siguen guardadas en tu cuenta.'))),
+  'ir-ajustes': () => { cerrarHoja(); irA('ajustes'); },
+  compartir: () => compartirLista(),
+  reportar: el => hojaReportar(el.dataset.producto || ''),
+  'aj-nombre': () => hojaCambiarNombre(),
+  'aj-clave': () => hojaCambiarClave(),
+  'aj-eliminar-cuenta': () => hojaEliminarCuenta(),
+  'aj-idioma': el => {
+    if (el.dataset.valor === AJUSTES.idioma) return;
+    guardarAjustes({ idioma: el.dataset.valor });
+    location.reload(); // así se traduce todo de una vez
+  },
+  'aj-tema': el => { window.cambiarTema(el.dataset.valor); renderAjustes(); },
+  'aj-letra': el => {
+    guardarAjustes({ letra: el.dataset.valor });
+    document.documentElement.setAttribute('data-letra', el.dataset.valor);
+    renderAjustes();
+  },
+  'aj-movimiento': el => {
+    guardarAjustes({ movimiento: el.dataset.valor });
+    document.documentElement.setAttribute('data-movimiento', el.dataset.valor);
+    renderAjustes();
+  },
+  'aj-orden': el => ejecutar(async () => {
+    guardarAjustes({ orden: el.dataset.valor });
+    renderAjustes();
+    await refrescarPorAjustes();
+    avisar(el.dataset.valor === 'precio' ? t('Productos ordenados del más barato al más caro') : t('Productos ordenados por nombre'));
   }),
   'nueva-lista': () => hojaNuevaLista(),
   'opciones-lista': () => hojaOpciones(),
@@ -1317,19 +1571,19 @@ const acciones = {
     estado.listas.unshift(copia);
     cerrarHoja();
     await abrirLista(copia._id);
-    avisar('🔁 Lista duplicada');
+    avisar(t('🔁 Lista duplicada'));
   }),
   desmarcar: () => ejecutar(async () => {
     const lista = await api(`/api/listas/${estado.lista._id}`, { method: 'PUT', body: { desmarcarTodo: true } });
     cerrarHoja();
     await trasCambio(lista);
-    avisar('↩️ Todo desmarcado');
+    avisar(t('↩️ Todo desmarcado'));
   }),
   eliminar: () => ejecutar(async () => {
     await api(`/api/listas/${estado.lista._id}`, { method: 'DELETE' });
     cerrarHoja();
     await cargarListas();
-    avisar('🗑️ Lista eliminada');
+    avisar(t('🗑️ Lista eliminada'));
   }),
   instalar: async () => {
     cerrarHoja();
@@ -1366,14 +1620,51 @@ document.addEventListener('submit', e => {
     });
   }
   if (tipo === 'restablecer') {
-    if (datos.password !== datos.password2) return avisar('Las dos contraseñas no son iguales');
-    return ejecutar(() => iniciarSesion('/api/auth/restablecer', { token: form.dataset.token, password: datos.password }, '🔑 ¡Listo! Tu contraseña cambió.'));
+    if (datos.password !== datos.password2) return avisar(t('Las dos contraseñas no son iguales'));
+    return ejecutar(() => iniciarSesion('/api/auth/restablecer', { token: form.dataset.token, password: datos.password }, t('🔑 ¡Listo! Tu contraseña cambió.')));
   }
   if (tipo === 'compra') return ejecutar(() => registrarCompra(datos, form));
+  if (tipo === 'nombre-cuenta') {
+    return ejecutar(async () => {
+      estado.usuario = await api('/api/auth/yo', { method: 'PUT', body: { nombre: datos.nombre.trim() } });
+      renderCuenta();
+      cerrarHoja();
+      renderAjustes();
+      avisar(t('✓ Nombre cambiado'));
+    });
+  }
+  if (tipo === 'clave') {
+    if (datos.nueva !== datos.nueva2) return avisar(t('Las dos contraseñas no son iguales'));
+    return ejecutar(async () => {
+      await api('/api/auth/password', { method: 'PUT', body: { actual: datos.actual, nueva: datos.nueva } });
+      cerrarHoja();
+      avisar(t('🔑 ¡Listo! Tu contraseña cambió.'));
+    });
+  }
+  if (tipo === 'eliminar-cuenta') {
+    return ejecutar(async () => {
+      await api('/api/auth/yo', { method: 'DELETE', body: { actual: datos.actual } });
+      await salirDeLaCuenta(t('Tu cuenta fue eliminada.'));
+    });
+  }
+  if (tipo === 'reporte') {
+    return ejecutar(async () => {
+      await api('/api/reportes', { method: 'POST', body: datos });
+      cerrarHoja();
+      avisar(t('¡Gracias! Lo vamos a revisar.'));
+    });
+  }
+  if (tipo === 'aj-presupuesto') {
+    const monto = numero(datos.presupuesto);
+    if (!(monto > 0)) return avisar(t('Escribí un presupuesto mayor que cero'));
+    guardarAjustes({ presupuesto: monto });
+    renderAjustes();
+    return avisar(t('💰 Presupuesto inicial: {monto}', { monto: fmtC(monto) }));
+  }
 
   if (datos.presupuesto !== undefined) {
     datos.presupuesto = numero(datos.presupuesto);
-    if (!(datos.presupuesto > 0)) return avisar('Escribí un presupuesto mayor que cero');
+    if (!(datos.presupuesto > 0)) return avisar(t('Escribí un presupuesto mayor que cero'));
   }
 
   ejecutar(async () => {
@@ -1381,12 +1672,12 @@ document.addEventListener('submit', e => {
       const pendiente = form.dataset.pendiente;
       cerrarHoja();
       await crearLista(datos.nombre.trim(), datos.presupuesto, pendiente);
-      if (!pendiente) avisar('📝 Lista creada');
+      if (!pendiente) avisar(t('📝 Lista creada'));
     } else if (tipo === 'presupuesto') {
       const lista = await api(`/api/listas/${estado.lista._id}`, { method: 'PUT', body: { presupuesto: datos.presupuesto } });
       cerrarHoja();
       await trasCambio(lista);
-      avisar('💰 Presupuesto actualizado');
+      avisar(t('💰 Presupuesto actualizado'));
     } else if (tipo === 'renombrar') {
       const lista = await api(`/api/listas/${estado.lista._id}`, { method: 'PUT', body: { nombre: datos.nombre.trim() } });
       cerrarHoja();
@@ -1410,10 +1701,21 @@ document.addEventListener('change', e => {
 window.addEventListener('misuper:sesion-vencida', () => {
   estado.usuario = null;
   renderCuenta();
-  avisar('Tu sesión venció. Volvé a entrar para ver las listas de tu cuenta.');
+  avisar(t('Tu sesión venció. Volvé a entrar para ver las listas de tu cuenta.'));
 });
 
 $('#selector-lista').addEventListener('change', e => ejecutar(() => abrirLista(e.target.value)));
+document.addEventListener('change', e => {
+  const casilla = e.target.closest('[data-aj-super]');
+  if (!casilla) return;
+  const elegidos = [...document.querySelectorAll('[data-aj-super]:checked')].map(c => c.dataset.ajSuper);
+  if (!elegidos.length) {
+    casilla.checked = true;
+    return avisar(t('Elegí al menos un supermercado'));
+  }
+  guardarAjustes({ supers: ORDEN_SUPERS.filter(n => elegidos.includes(n)) });
+  ejecutar(refrescarPorAjustes);
+});
 $('#buscar').addEventListener('input', e => { estado.busqueda = e.target.value; buscarConPausa(); });
 $('#fondo-hoja').addEventListener('click', e => { if (e.target.id === 'fondo-hoja') cerrarHoja(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarHoja(); });
@@ -1427,5 +1729,5 @@ if ('serviceWorker' in navigator) {
 /* Arranque */
 // ¿Viene del link del correo "Olvidé mi contraseña"? (…/app.html#restablecer=CODIGO)
 const codigoReset = (location.hash.match(/^#restablecer=([a-f0-9]{64})$/) || [])[1];
-irA(['lista', 'comparar', 'gastos'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'productos');
+irA(['lista', 'comparar', 'gastos', 'ajustes'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'productos');
 iniciar().then(() => { if (codigoReset) hojaRestablecer(codigoReset); });

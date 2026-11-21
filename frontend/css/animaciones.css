@@ -84,7 +84,7 @@
 
 /* Indicador que se desliza en la barra de abajo */
 .tab-indicador {
-  position: absolute; top: 0; left: 0; width: calc(100% / 4); height: 3px; pointer-events: none;
+  position: absolute; top: 0; left: 0; width: calc(100% / 5); height: 3px; pointer-events: none;
   display: flex; justify-content: center;
   transform: translateX(calc(var(--tab, 0) * 100%));
   transition: transform .42s cubic-bezier(.3,1.35,.5,1);
