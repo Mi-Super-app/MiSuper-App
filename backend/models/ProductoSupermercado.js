@@ -12,6 +12,8 @@ const productoSupermercadoSchema = new mongoose.Schema(
     nombreEnTienda: { type: String },
     // Página del producto en la web del súper. Sin esto, no se actualiza solo.
     urlExterna: { type: String },
+    // Última vez que el producto apareció en el catálogo de la tienda (importación automática)
+    vistoEnCatalogo: { type: Date },
 
     precioActual: { type: Number, min: 0 },   // lo que paga el cliente (con rebaja si hay)
     precioNormal: { type: Number, min: 0 },   // precio sin rebaja (para mostrar "antes C$...")
@@ -34,5 +36,7 @@ const productoSupermercadoSchema = new mongoose.Schema(
 // Un producto solo puede aparecer UNA vez por supermercado.
 // Así, actualizar todos los días no crea precios repetidos.
 productoSupermercadoSchema.index({ producto: 1, supermercado: 1 }, { unique: true });
+// Para encontrar rápido un producto de la tienda por su link al importar
+productoSupermercadoSchema.index({ supermercado: 1, urlExterna: 1 });
 
 module.exports = mongoose.model('ProductoSupermercado', productoSupermercadoSchema);

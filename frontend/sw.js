@@ -9,7 +9,7 @@
    Si cambiás archivos y querés forzar que todos los teléfonos
    descarguen la versión nueva, subí el número de VERSION.
    ══════════════════════════════════════════════════════════ */
-const VERSION = 'misuper-v3';
+const VERSION = 'misuper-v4';
 const ARCHIVOS = [
   './', 'index.html', 'app.html',
   'css/style.css', 'css/app.css', 'css/theme.css', 'css/animaciones.css',
@@ -35,6 +35,8 @@ self.addEventListener('fetch', e => {
   const url = new URL(request.url);
   // Solo GET de nuestro propio sitio (las fuentes de Google y otros sitios pasan directo)
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
+  // Las búsquedas de productos no se guardan (son miles distintas y llenarían el teléfono)
+  if (url.pathname.startsWith('/api/') && url.search) return;
 
   e.respondWith(
     fetch(request)

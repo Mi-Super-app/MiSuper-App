@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "API de Mi Súper: listas de compras con presupuesto y precios automáticos de La Colonia, La Unión y Walmart",
+  "description": "API de Mi Súper: listas de compras con presupuesto y el catálogo completo, con precios automáticos, de La Colonia, La Unión y Walmart",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -9,7 +9,8 @@
     "seed": "node seed.js",
     "precios": "node jobs/actualizarPrecios.js",
     "buscar": "node scripts/buscar.js",
-    "probar": "node scripts/probar.js"
+    "probar": "node scripts/probar.js",
+    "catalogo": "node scripts/catalogo.js"
   },
   "keywords": [],
   "author": "",

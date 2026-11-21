@@ -7,6 +7,7 @@ const actualizacionLogSchema = new mongoose.Schema({
   fin: { type: Date },
   disparadoPor: { type: String, enum: ['cron', 'inicio', 'manual', 'seed'], default: 'cron' },
   revisados: { type: Number, default: 0 },
+  nuevos: { type: Number, default: 0 }, // productos que se agregaron solos desde el catálogo de la tienda
   actualizados: { type: Number, default: 0 },
   sinCambio: { type: Number, default: 0 },
   agotados: { type: Number, default: 0 },

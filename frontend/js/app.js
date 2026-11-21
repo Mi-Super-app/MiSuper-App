@@ -214,7 +214,7 @@ async function cargarPrecios() {
   try {
     const [info, lista] = await Promise.all([api('/api/estado'), api('/api/productos')]);
     productos = lista;
-    document.getElementById('stat-productos').textContent = productos.length;
+    document.getElementById('stat-productos').textContent = Math.max(info.productos || 0, productos.length).toLocaleString('es-NI');
     const cats = Object.keys(CATEGORIAS).filter(c => productos.some(p => p.categoria === c));
     renderTabs(cats, cats[0]);
     renderTabla(cats[0]);

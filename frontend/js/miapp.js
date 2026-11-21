@@ -8,10 +8,14 @@
 const LS_ACTIVA = 'misuper-lista-activa';
 
 const estado = {
-  productos: [],          // catálogo con precios
-  porId: new Map(),       // producto por id
+  productos: [],          // catálogo base con precios (el mismo producto en las 3 tiendas)
+  porId: new Map(),       // producto por id (catálogo base + los que se buscaron)
   categoria: 'todas',
   busqueda: '',
+  resultados: null,       // lo que devolvió el servidor al buscar o elegir sección (null = catálogo base)
+  paginaResultados: 1,
+  hayMas: false,          // ¿hay más resultados para "Ver más"?
+  resumen: {},            // cuántos productos hay en cada sección { lacteos: 900, … }
   usuario: null,          // cuenta con sesión (o null si usa la app sin cuenta)
   listas: [],             // mis listas (nombre, presupuesto…)
   lista: null,            // lista abierta, con sus productos
@@ -188,11 +192,19 @@ async function ejecutar(fn) {
 /* ══════════════ CARGA DE DATOS ══════════════ */
 async function iniciar() {
   try {
-    const [info, productos] = await Promise.all([api('/api/estado'), api('/api/productos')]);
+    const [info, productos, resumen] = await Promise.all([
+      api('/api/estado'),
+      api('/api/productos'),
+      api('/api/productos/resumen').catch(() => ({}))
+    ]);
     $('#aviso').hidden = true;
     await revisarSesion();
     estado.productos = productos;
     estado.porId = new Map(productos.map(p => [p.id, p]));
+    estado.resumen = resumen;
+    if (info.productos > productos.length) {
+      $('#buscar').placeholder = `Buscar entre ${info.productos.toLocaleString('es-NI')} productos: leche, arroz, café…`;
+    }
     const textoPrecios = info.ultimaActualizacionDePrecios
       ? `Precios actualizados ${fechaAmigable(info.ultimaActualizacionDePrecios)}`
       : 'Precios sin actualizar todavía';
@@ -244,7 +256,62 @@ async function abrirLista(id) {
 }
 
 async function actualizarComparacion() {
-  estado.comparacion = estado.lista ? await api(`/api/listas/${estado.lista._id}/comparar`) : null;
+  const [comparacion] = await Promise.all([
+    estado.lista ? api(`/api/listas/${estado.lista._id}/comparar`) : null,
+    asegurarProductos()
+  ]);
+  estado.comparacion = comparacion;
+}
+
+/* ══════════════ CATÁLOGO GRANDE: BUSCAR EN EL SERVIDOR ══════════════
+   Hay miles de productos, así que no se cargan todos: al escribir o al elegir
+   una sección se le pregunta al servidor, de 60 en 60. */
+const POR_PAGINA = 60;
+let temporizadorBusqueda = null;
+let consultaActual = 0;
+
+function guardarEnMapa(lista) {
+  lista.forEach(p => estado.porId.set(p.id, p));
+}
+
+async function buscarProductos({ mas = false } = {}) {
+  const q = estado.busqueda.trim();
+  const consulta = ++consultaActual; // si llega una respuesta vieja, se ignora
+  if (!q && estado.categoria === 'todas') {
+    estado.resultados = null;
+    estado.hayMas = false;
+    renderProductos();
+    return;
+  }
+  const pagina = mas ? estado.paginaResultados + 1 : 1;
+  const params = new URLSearchParams({ limite: POR_PAGINA, pagina });
+  if (q) params.set('q', q);
+  if (estado.categoria !== 'todas') params.set('categoria', estado.categoria);
+  if (!mas) $('#prod-grid').innerHTML = '<div class="vacio" style="grid-column:1/-1"><span class="vacio-ico">🔎</span><p>Buscando…</p></div>';
+  try {
+    const lista = await api('/api/productos?' + params);
+    if (consulta !== consultaActual) return;
+    guardarEnMapa(lista);
+    estado.resultados = mas ? [...(estado.resultados || []), ...lista] : lista;
+    estado.paginaResultados = pagina;
+    estado.hayMas = lista.length === POR_PAGINA;
+    renderProductos();
+  } catch {
+    if (consulta === consultaActual) avisar('⚠️ No pudimos buscar ahora. Probá de nuevo.');
+  }
+}
+
+function buscarConPausa() {
+  clearTimeout(temporizadorBusqueda);
+  temporizadorBusqueda = setTimeout(buscarProductos, 300);
+}
+
+/* Los productos de la lista que no están cargados (ej: uno que se buscó ayer) */
+async function asegurarProductos() {
+  const faltan = itemsValidos().map(i => idDe(i.producto)).filter(id => !estado.porId.has(id));
+  for (let i = 0; i < faltan.length; i += 200) {
+    guardarEnMapa(await api(`/api/productos?limite=200&ids=${faltan.slice(i, i + 200).join(',')}`));
+  }
 }
 
 /* Después de cada cambio en la lista */
@@ -507,12 +574,13 @@ function renderTodo() {
 }
 
 function renderChips() {
-  const presentes = Object.keys(CATEGORIAS).filter(c => estado.productos.some(p => p.categoria === c));
+  const presentes = Object.keys(CATEGORIAS).filter(c => estado.resumen[c] || estado.productos.some(p => p.categoria === c));
   const chip = (valor, texto) => `<button class="chip ${estado.categoria === valor ? 'activa' : ''}" data-accion="categoria" data-valor="${valor}" role="tab">${texto}</button>`;
   $('#chips').innerHTML = chip('todas', '✨ Todos') + presentes.map(c => chip(c, `${CATEGORIAS[c].emoji} ${CATEGORIAS[c].nombre}`)).join('');
 }
 
 function productosFiltrados() {
+  if (estado.resultados) return estado.resultados; // lo que encontró el servidor
   const q = sinTildes(estado.busqueda.trim());
   return estado.productos.filter(p =>
     (estado.categoria === 'todas' || p.categoria === estado.categoria) &&
@@ -543,9 +611,13 @@ function renderProductos() {
   const lista = productosFiltrados();
   if (!estado.productos.length) return;
   if (!lista.length) {
-    $('#prod-grid').innerHTML = `<div class="vacio" style="grid-column:1/-1"><span class="vacio-ico">🔎</span><p>No encontramos "${esc(estado.busqueda)}".<br>Probá con otra palabra.</p></div>`;
+    const que = estado.busqueda.trim() ? `"${esc(estado.busqueda)}"` : 'productos en esta sección';
+    $('#prod-grid').innerHTML = `<div class="vacio" style="grid-column:1/-1"><span class="vacio-ico">🔎</span><p>No encontramos ${que}.<br>Probá con otra palabra.</p></div>`;
     return;
   }
+  const verMas = estado.resultados && estado.hayMas
+    ? `<div style="grid-column:1/-1;text-align:center;padding:8px 0 16px"><button class="btn-ghost" data-accion="ver-mas">Ver más productos</button></div>`
+    : '';
   $('#prod-grid').innerHTML = lista.map(p => {
     const cant = cantidadEnLista(p.id);
     const cat = CATEGORIAS[p.categoria] || CATEGORIAS.otros;
@@ -565,7 +637,7 @@ function renderProductos() {
       </div>
       <div class="precios">${celdasPrecio(p)}</div>
     </article>`;
-  }).join('');
+  }).join('') + verMas;
 }
 
 function renderSelector() {
@@ -1192,7 +1264,12 @@ function dibujarHistorial(rango) {
 /* ══════════════ EVENTOS ══════════════ */
 const acciones = {
   ir: el => irA(el.dataset.vista),
-  categoria: el => { estado.categoria = el.dataset.valor; renderChips(); renderProductos(); cascada($('#prod-grid')); },
+  categoria: el => {
+    estado.categoria = el.dataset.valor;
+    renderChips();
+    buscarProductos().then(() => cascada($('#prod-grid')));
+  },
+  'ver-mas': el => { el.disabled = true; el.textContent = 'Cargando…'; buscarProductos({ mas: true }); },
   agregar: el => ejecutar(() => agregar(el.dataset.id)),
   mas: el => ejecutar(() => cambiarCantidad(el.dataset.id, +1)),
   menos: el => ejecutar(() => cambiarCantidad(el.dataset.id, -1)),
@@ -1337,7 +1414,7 @@ window.addEventListener('misuper:sesion-vencida', () => {
 });
 
 $('#selector-lista').addEventListener('change', e => ejecutar(() => abrirLista(e.target.value)));
-$('#buscar').addEventListener('input', e => { estado.busqueda = e.target.value; renderProductos(); });
+$('#buscar').addEventListener('input', e => { estado.busqueda = e.target.value; buscarConPausa(); });
 $('#fondo-hoja').addEventListener('click', e => { if (e.target.id === 'fondo-hoja') cerrarHoja(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarHoja(); });
 

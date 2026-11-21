@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Producto = require('../models/Producto');
+const Supermercado = require('../models/Supermercado');
+const ProductoSupermercado = require('../models/ProductoSupermercado');
 const HistorialPrecio = require('../models/HistorialPrecio');
 const { productosConPrecios } = require('../helpers/precios');
 
@@ -9,21 +12,75 @@ function escaparRegex(texto) {
   return texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// GET /api/productos            → todos
-// GET /api/productos?q=leche    → busca por nombre
-// GET /api/productos?categoria=lacteos
-router.get('/', async (req, res) => {
-  const filtro = {};
-  if (req.query.q) filtro.nombre = { $regex: escaparRegex(req.query.q), $options: 'i' };
-  if (req.query.categoria) filtro.categoria = req.query.categoria;
+// "cafe" también encuentra "Café" y "CAFÉ"; "pina" encuentra "piña"
+const VARIANTES = { a: '[aáàä]', e: '[eéèë]', i: '[iíìï]', o: '[oóòö]', u: '[uúùü]', n: '[nñ]' };
+function regexSinTildes(palabra) {
+  const limpia = palabra.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  return escaparRegex(limpia)
+    .split('')
+    .map(c => VARIANTES[c] || c)
+    .join('');
+}
 
-  const productos = await Producto.find(filtro).sort('nombre');
+const LIMITE_NORMAL = 60;
+const LIMITE_MAXIMO = 200;
+
+// GET /api/productos                      → los productos del catálogo base (data/productos.js):
+//                                            el mismo producto revisado en las 3 tiendas
+// GET /api/productos?q=leche              → busca en TODOS los productos (también los importados)
+// GET /api/productos?categoria=lacteos    → una sección completa
+// GET /api/productos?supermercado=walmart → solo los que tienen precio en ese súper
+// GET /api/productos?ids=ID1,ID2          → productos exactos (ej: los de una lista de compras)
+// GET /api/productos?todos=1              → todos, por páginas
+// Páginas: &pagina=2&limite=60 (máx. 200). El total viene en el encabezado X-Total.
+router.get('/', async (req, res) => {
+  const { q, categoria, supermercado, ids, pagina: paginaTxt, limite: limiteTxt, todos } = req.query;
+  const filtro = {};
+  const buscaTodo = Boolean(q || categoria || supermercado || ids || paginaTxt || limiteTxt || todos);
+  if (!buscaTodo) filtro.origen = { $ne: 'importado' };
+
+  if (q) {
+    const palabras = String(q).trim().split(/\s+/).filter(Boolean).slice(0, 8);
+    if (palabras.length) filtro.$and = palabras.map(p => ({ nombre: { $regex: regexSinTildes(p), $options: 'i' } }));
+  }
+  if (categoria) filtro.categoria = String(categoria);
+
+  let soloIds = null;
+  if (ids) soloIds = String(ids).split(',').filter(id => mongoose.isValidObjectId(id)).slice(0, LIMITE_MAXIMO);
+  if (supermercado) {
+    const s = await Supermercado.findOne({ slug: String(supermercado) });
+    if (!s) return res.status(404).json({ error: 'Supermercado no encontrado' });
+    const conPrecio = await ProductoSupermercado.distinct('producto', {
+      supermercado: s._id,
+      precioActual: { $gt: 0 },
+      disponible: true
+    });
+    soloIds = soloIds ? soloIds.filter(id => conPrecio.some(c => c.equals(id))) : conPrecio;
+  }
+  if (soloIds) filtro._id = { $in: soloIds };
+
+  const limite = Math.min(Math.max(parseInt(limiteTxt, 10) || (buscaTodo ? LIMITE_NORMAL : LIMITE_MAXIMO), 1), LIMITE_MAXIMO);
+  const pagina = Math.max(parseInt(paginaTxt, 10) || 1, 1);
+
+  const [productos, total] = await Promise.all([
+    // Primero los del catálogo base (se comparan en las 3 tiendas), después los importados
+    Producto.find(filtro).sort({ origen: 1, nombre: 1 }).skip((pagina - 1) * limite).limit(limite).lean(),
+    Producto.countDocuments(filtro)
+  ]);
+  res.set('X-Total', String(total));
+  res.set('Access-Control-Expose-Headers', 'X-Total');
   res.json(await productosConPrecios(productos));
 });
 
 // GET /api/productos/categorias → lista de categorías válidas (útil para el frontend)
 router.get('/categorias', (req, res) => {
   res.json(Producto.CATEGORIAS);
+});
+
+// GET /api/productos/resumen → cuántos productos hay en cada sección
+router.get('/resumen', async (req, res) => {
+  const filas = await Producto.aggregate([{ $group: { _id: '$categoria', total: { $sum: 1 } } }]);
+  res.json(Object.fromEntries(filas.map(f => [f._id, f.total])));
 });
 
 // GET /api/productos/:id → un producto con sus precios

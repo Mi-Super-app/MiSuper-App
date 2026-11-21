@@ -94,6 +94,12 @@ const CATEGORIAS = {
   bebidas:          { nombre: 'Bebidas',          emoji: '🥤' },
   'frutas-verduras':{ nombre: 'Frutas y verduras',emoji: '🥦' },
   panaderia:        { nombre: 'Panadería',        emoji: '🍞' },
+  congelados:       { nombre: 'Congelados',       emoji: '🧊' },
+  licores:          { nombre: 'Cervezas y licores', emoji: '🍺' },
+  bebes:            { nombre: 'Bebés',            emoji: '🍼' },
+  mascotas:         { nombre: 'Mascotas',         emoji: '🐾' },
+  farmacia:         { nombre: 'Farmacia',         emoji: '💊' },
+  hogar:            { nombre: 'Hogar y desechables', emoji: '🍽️' },
   otros:            { nombre: 'Otros',            emoji: '📦' }
 };
 

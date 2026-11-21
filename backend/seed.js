@@ -3,13 +3,15 @@
 // Uso:  npm run seed
 //
 // Lee data/supermercados.js y data/productos.js y los guarda en MongoDB.
-// Después trae los precios REALES de las tiendas (tarda 1-2 minutos).
+// Después importa el catálogo completo de cada tienda y trae los precios REALES
+// (la primera vez tarda unos 10 minutos: son miles de productos).
 //
 // Se puede ejecutar todas las veces que quieras:
 //   - no borra tus listas de compras
 //   - no duplica nada (si un producto ya existe, lo actualiza)
 //   - si agregas un producto en data/productos.js, lo crea
 //   - borra los supermercados que ya no están en data/supermercados.js (ej: Palí)
+//   - NO borra los productos importados automáticamente del catálogo de cada tienda
 //
 // Para cargar el catálogo SIN traer precios:  npm run seed -- --sin-precios
 
@@ -19,9 +21,26 @@ const Supermercado = require('./models/Supermercado');
 const Producto = require('./models/Producto');
 const ProductoSupermercado = require('./models/ProductoSupermercado');
 const HistorialPrecio = require('./models/HistorialPrecio');
+const Lista = require('./models/Lista');
 const supermercados = require('./data/supermercados');
 const productos = require('./data/productos');
 const { actualizarPrecios } = require('./jobs/actualizarPrecios');
+
+// Quita el link de un producto importado que resultó ser uno del catálogo base.
+// Si el importado se queda sin links, se borra y en las listas se cambia por el del catálogo.
+async function quitarEnlaceImportado(enlace, productoCatalogoId) {
+  const importado = await Producto.findById(enlace.producto);
+  await enlace.deleteOne();
+  if (!importado || importado.origen !== 'importado') return;
+  if (await ProductoSupermercado.exists({ producto: importado._id })) return;
+  await Lista.updateMany(
+    { 'items.producto': importado._id },
+    { $set: { 'items.$[i].producto': productoCatalogoId } },
+    { arrayFilters: [{ 'i.producto': importado._id }] }
+  );
+  await HistorialPrecio.deleteMany({ producto: importado._id });
+  await importado.deleteOne();
+}
 
 async function sincronizar() {
   await mongoose.connect(process.env.MONGODB_URI);
@@ -51,7 +70,7 @@ async function sincronizar() {
   for (const p of productos) {
     const producto = await Producto.findOneAndUpdate(
       { nombre: p.nombre },
-      { nombre: p.nombre, categoria: p.categoria },
+      { nombre: p.nombre, categoria: p.categoria, origen: 'catalogo' },
       { upsert: true, returnDocument: 'after', runValidators: true }
     );
 
@@ -60,6 +79,14 @@ async function sincronizar() {
         console.log(`⚠️  "${p.nombre}": el supermercado "${slug}" no existe en data/supermercados.js`);
         continue;
       }
+      // Si la importación automática ya había traído este mismo producto, se quita ese repetido
+      const repetido = await ProductoSupermercado.findOne({
+        supermercado: porSlug[slug]._id,
+        urlExterna: url,
+        producto: { $ne: producto._id }
+      });
+      if (repetido) await quitarEnlaceImportado(repetido, producto._id);
+
       const enlace = await ProductoSupermercado.findOne({ producto: producto._id, supermercado: porSlug[slug]._id });
       if (!enlace) {
         await ProductoSupermercado.create({ producto: producto._id, supermercado: porSlug[slug]._id, urlExterna: url });
@@ -74,9 +101,10 @@ async function sincronizar() {
     }
   }
 
-  // Productos viejos que ya no están en el catálogo (ej: los de ejemplo del seed anterior)
+  // Productos viejos que ya no están en el catálogo (ej: los de ejemplo del seed anterior).
+  // Los importados automáticamente NO se tocan.
   const nombres = productos.map(p => p.nombre);
-  const sobrantes = await Producto.find({ nombre: { $nin: nombres } });
+  const sobrantes = await Producto.find({ nombre: { $nin: nombres }, origen: { $ne: 'importado' } });
   for (const s of sobrantes) {
     await ProductoSupermercado.deleteMany({ producto: s._id });
     await HistorialPrecio.deleteMany({ producto: s._id });
@@ -93,7 +121,7 @@ async function sincronizar() {
   if (process.argv.includes('--sin-precios')) {
     console.log('Precios no actualizados (--sin-precios). Ejecuta: npm run precios');
   } else {
-    console.log('Trayendo precios reales de las tiendas (tarda 1-2 minutos)...\n');
+    console.log('Importando el catálogo de las tiendas con sus precios (tarda unos minutos)...\n');
     await actualizarPrecios({ disparadoPor: 'seed' });
   }
 

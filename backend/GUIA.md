@@ -10,12 +10,17 @@ igual que en la guía.
 
 ## ¿Qué hace este backend?
 
-1. Tiene un **catálogo de 26 productos** (leche, arroz, azúcar, café, limpieza,
+1. Tiene un **catálogo base de 26 productos** (leche, arroz, azúcar, café, limpieza,
    higiene…). Cada uno es el **mismo producto** (misma marca y tamaño) en las tres
    tiendas, con su link en cada una.
-2. **Todos los días a las 6:00 a.m.**, node-cron pide el precio de cada producto
-   a las tres tiendas y lo guarda. Si hay rebaja, guarda el precio rebajado.
-3. Tu app puede:
+2. Además **importa solo el catálogo completo de cada súper** (unos 8.000 productos
+   de La Colonia y 10.000 de La Unión y de Walmart) y pone cada producto en su sección
+   (lácteos, carnes, limpieza, bebés, mascotas…). Los productos nuevos de las tiendas
+   aparecen solos. Walmart y La Unión comparten catálogo, así que esos productos sí se
+   comparan entre las dos; los de La Colonia aparecen con su propio precio.
+3. **Todos los días a las 6:00 a.m.**, node-cron lee el catálogo de las tres tiendas
+   y guarda los precios. Si hay rebaja, guarda el precio rebajado.
+4. Tu app puede:
    - mostrar productos con el precio en cada súper y cuál es el más barato
    - crear **listas de compras con presupuesto**
    - decir **cuánto cuesta la lista en cada súper** y si alcanza el presupuesto
@@ -33,7 +38,9 @@ El backend respeta las reglas para programas (robots.txt) de cada tienda, consul
 
 | Carpeta / archivo | Qué hay ahí |
 |---|---|
-| `data/productos.js` | **El catálogo**: los productos y sus links. Aquí agregas productos nuevos |
+| `data/productos.js` | **El catálogo base**: los productos comparados en las 3 tiendas y sus links |
+| `scrapers/catalogo.js` | Lee el catálogo completo de cada súper (importación automática) |
+| `scrapers/secciones.js` | En qué sección de Mi Súper va cada categoría de cada tienda |
 | `data/supermercados.js` | Los 3 supermercados |
 | `models/` | Cómo se guardan los datos en MongoDB |
 | `routes/` | Las direcciones (rutas) de la API que usará el frontend |
@@ -122,20 +129,25 @@ Si sale ❌, revisa tu internet y vuelve a probar.
 npm run seed
 ```
 
-Tarda **unos 3 minutos**, porque consulta 26 productos en 3 tiendas con una pausa
-entre cada uno para no saturarlas. Al final verás:
+Tarda **unos 10 minutos**, porque lee el catálogo completo de las 3 tiendas con una
+pausa entre cada consulta para no saturarlas. Al final verás algo como:
 
 ```
 ✅ Catálogo listo: 3 supermercados, 26 productos, 78 links
 
-Trayendo precios reales de las tiendas (tarda 1-2 minutos)...
+Importando el catálogo de las tiendas con sus precios (tarda unos minutos)...
 
-[precios] Iniciando: La Colonia, La Unión, Walmart
-[precios] La Colonia: 26 producto(s) revisados
-[precios] La Unión: 26 producto(s) revisados
-[precios] Walmart: 26 producto(s) revisados
-[precios] Listo: 78 revisados, 78 cambiaron, 0 sin cambio, 0 agotados, 0 sospechosos, 0 errores
+[precios] La Colonia: 7992 en el catálogo, 7970 productos nuevos, ...
+[precios] La Unión: 9965 en el catálogo, ...
+[precios] Walmart: 11008 en el catálogo, ...
+[precios] Listo: 28965 revisados, 25000 nuevos, ...
 ```
+
+> ¿Solo quieres ver cuántos productos se importarían, sin tocar la base de datos?
+> `npm run catalogo`  (muestra cuántos hay en cada sección de cada tienda).
+>
+> ¿Quieres que se actualicen los precios pero que NO se agreguen productos nuevos?
+> Pon `IMPORTAR_CATALOGO=false` en tu `.env`.
 
 > También verás "Eliminado supermercado que ya no se usa: Palí" y "Maxi Palí", y que
 > se borraron los productos de ejemplo viejos. Es normal: eran de la versión anterior.
@@ -279,8 +291,14 @@ El `.env` no se sube porque está en `.gitignore`. Así debe ser: ahí está tu 
    - La **parte final del link de La Unión** es lo que va entre `launion.com.ni/` y `/p`.
      Walmart usa la misma, así que no hay que escribirla dos veces.
    - Categorías válidas: `carnes`, `lacteos`, `limpieza`, `higiene`, `granos`,
-     `abarrotes`, `bebidas`, `frutas-verduras`, `panaderia`, `otros`.
+     `abarrotes`, `bebidas`, `frutas-verduras`, `panaderia`, `congelados`, `licores`,
+     `bebes`, `mascotas`, `farmacia`, `hogar`, `otros`.
 3. Ejecuta `npm run seed`.
+
+> Esto es solo para el **catálogo base** (el mismo producto comparado en las tres
+> tiendas). Los demás productos de cada súper ya se importan solos todos los días.
+> Si quieres cambiar a qué sección va una categoría de una tienda, o importar otra
+> categoría, edita `scrapers/secciones.js`.
 
 ---
 
@@ -337,12 +355,13 @@ contraseña nueva y queda dentro de su cuenta.
 |---|---|---|
 | GET | `/` | Estado de la API y última actualización de precios |
 | GET | `/api/supermercados` | Los 3 supermercados |
-| GET | `/api/supermercados/:slug/productos` | Sección de un súper (`la-colonia`, `la-union`, `walmart`) |
-| GET | `/api/productos` | Todos los productos con precios. Filtros: `?q=texto`, `?categoria=lacteos` |
+| GET | `/api/supermercados/:slug/productos` | Sección de un súper (`la-colonia`, `la-union`, `walmart`). Filtros: `?categoria=lacteos&pagina=2&limite=200` |
+| GET | `/api/productos` | Sin filtros: los 26 del catálogo base. Con filtros busca en **todos**: `?q=texto`, `?categoria=lacteos`, `?supermercado=walmart`, `?ids=ID1,ID2`, `?pagina=2&limite=60` (total en el encabezado `X-Total`) |
+| GET | `/api/productos/resumen` | Cuántos productos hay en cada sección |
 | GET | `/api/productos/categorias` | Categorías válidas |
 | GET | `/api/productos/:id` | Un producto con sus precios |
 | GET | `/api/productos/:id/historial` | Cómo ha cambiado su precio |
-| GET | `/api/precios/:categoria` | Productos de una categoría |
+| GET | `/api/precios/:categoria` | Productos de una categoría (de 200 en 200: `?pagina=2`) |
 | GET | `/api/listas` | Todas las listas |
 | POST | `/api/listas` | Crear lista `{ "nombre": "...", "presupuesto": 1000 }` |
 | GET | `/api/listas/:id` | Ver una lista |
