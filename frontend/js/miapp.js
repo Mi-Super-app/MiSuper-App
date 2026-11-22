@@ -217,7 +217,6 @@ async function iniciar() {
     if (info.productos > productos.length) {
       $('#buscar').placeholder = t('Buscar entre {n} productos: leche, arroz, café…', { n: info.productos.toLocaleString(LOCALE()) });
     }
-    $('#sub-productos').textContent = listaDeNombres(supersActivos());
     renderChips();
     renderProductos();
     await cargarListas();
@@ -825,6 +824,7 @@ function renderOfertas() {
     ? chipCat('todas', t('Todas las secciones')) + cats.map(c => chipCat(c, `${CATEGORIAS[c].emoji} ${nombreCategoria(c)} · ${of.categorias[c]}`)).join('')
     : '';
 
+  if (of.cargando || of.error || !of.datos || !of.datos.length) firmaOfertas = '';
   if (of.cargando) { grid.innerHTML = `<div class="cargando" style="grid-column:1/-1">${t('Cargando ofertas…')}</div>`; return; }
   if (of.error) { grid.innerHTML = `<div class="vacio" style="grid-column:1/-1"><span class="vacio-ico">📡</span><p>${t('No pudimos cargar las ofertas.')}</p></div>`; return; }
   if (!of.datos) return;
@@ -836,20 +836,24 @@ function renderOfertas() {
   const verMas = of.pagina < of.paginas
     ? `<div style="grid-column:1/-1;text-align:center;padding:8px 0 16px"><button class="btn-ghost" data-accion="of-mas">${t('Ver más ofertas')}</button></div>`
     : '';
-  grid.innerHTML = of.datos.map(p => {
+  // Igual que en Productos: si las ofertas son las mismas, solo se actualizan las tarjetas que cambiaron
+  const firma = [of.datos.map(p => p.id).join(','), verMas ? 1 : 0].join('|');
+  if (firma === firmaOfertas && grid.querySelector('.prod-card[data-id]')) {
+    return actualizarTarjetas(grid, p => tarjetaOferta(p));
+  }
+  firmaOfertas = firma;
+  grid.innerHTML = of.datos.map(p => tarjetaOferta(p)).join('') + verMas;
+}
+
+let firmaOfertas = '';
+function tarjetaOferta(p) {
     const o = p.oferta;
     const cant = cantidadEnLista(p.id);
     const cat = CATEGORIAS[p.categoria] || CATEGORIAS.otros;
     const s = SUPERS[o.supermercado] || { emoji: '🏪' };
-    const accion = cant
-      ? `<div class="stepper mini" aria-label="${esc(t('{n} en tu lista', { n: cant }))}">
-           <button data-accion="menos" data-id="${p.id}" aria-label="${esc(t('Quitar uno'))}">−</button>
-           <span class="cant">${cant}</span>
-           <button data-accion="mas" data-id="${p.id}" aria-label="${esc(t('Agregar uno'))}">+</button>
-         </div>`
-      : `<button class="btn-agregar" data-accion="agregar" data-id="${p.id}" aria-label="${esc(t('Agregar {nombre} a mi lista', { nombre: p.nombre }))}">${t('+ Agregar')}</button>`;
+    const accion = accionTarjeta(p, cant);
     const porUnidad = p.tamano ? `<span class="pc-unidad">${textoPorUnidad(o.precio, p.tamano)}</span>` : '';
-    return `<article class="prod-card oferta-card ${cant ? 'en-lista' : ''} ${estado.recienAgregado === p.id ? 'recien' : ''}">
+    return `<article class="prod-card oferta-card ${cant ? 'en-lista' : ''} ${estado.recienAgregado === p.id ? 'recien' : ''}" data-id="${p.id}" data-cant="${cant}">
       <div class="prod-top">
         <div class="prod-emoji" aria-hidden="true">${cat.emoji}</div>
         <div class="prod-info" data-accion="historial" data-id="${p.id}" title="${esc(t('Ver cómo ha cambiado el precio'))}">
@@ -869,7 +873,6 @@ function renderOfertas() {
         <div class="prod-acc">${accion}</div>
       </div>
     </article>`;
-  }).join('') + verMas;
 }
 
 function renderProductos() {
@@ -878,24 +881,53 @@ function renderProductos() {
   if (!lista.length) {
     const que = estado.busqueda.trim() ? `"${esc(estado.busqueda)}"` : t('productos en esta sección');
     $('#prod-grid').innerHTML = `<div class="vacio" style="grid-column:1/-1"><span class="vacio-ico">🔎</span><p>${t('No encontramos {que}.', { que })}<br>${t('Probá con otra palabra.')}</p></div>`;
+    firmaProductos = '';
     return;
   }
   const verMas = estado.resultados && estado.hayMas
     ? `<div style="grid-column:1/-1;text-align:center;padding:8px 0 16px"><button class="btn-ghost" data-accion="ver-mas">${t('Ver más productos')}</button></div>`
     : '';
   const columnas = `grid-template-columns:repeat(${supersActivos().length},1fr)`;
-  $('#prod-grid').innerHTML = lista.map(p => {
+  const grid = $('#prod-grid');
+  // Si los productos son los mismos (solo cambió la lista de compras), se actualizan
+  // únicamente las tarjetas que cambiaron: dibujar todo de nuevo es lo más lento de la app.
+  const firma = [lista.map(p => p.id).join(','), supersActivos().join(','), verMas ? 1 : 0].join('|');
+  if (firma === firmaProductos && grid.querySelector('.prod-card[data-id]')) {
+    return actualizarTarjetas(grid, p => tarjetaProducto(p, columnas));
+  }
+  firmaProductos = firma;
+  grid.innerHTML = lista.map(p => tarjetaProducto(p, columnas)).join('') + verMas;
+}
+
+/* Botón de una tarjeta: "+ Agregar" o "− 1 +" si ya está en la lista */
+function accionTarjeta(p, cant) {
+  return cant
+    ? `<div class="stepper mini" aria-label="${esc(t('{n} en tu lista', { n: cant }))}">
+         <button data-accion="menos" data-id="${p.id}" aria-label="${esc(t('Quitar uno'))}">−</button>
+         <span class="cant">${cant}</span>
+         <button data-accion="mas" data-id="${p.id}" aria-label="${esc(t('Agregar uno'))}">+</button>
+       </div>`
+    : `<button class="btn-agregar" data-accion="agregar" data-id="${p.id}" aria-label="${esc(t('Agregar {nombre} a mi lista', { nombre: p.nombre }))}">${t('+ Agregar')}</button>`;
+}
+
+/* Vuelve a dibujar SOLO las tarjetas cuyo producto cambió de cantidad en la lista */
+function actualizarTarjetas(grid, plantilla) {
+  grid.querySelectorAll(':scope > .prod-card[data-id]').forEach(tarjeta => {
+    const id = tarjeta.dataset.id;
+    const cant = String(cantidadEnLista(id));
+    if (tarjeta.dataset.cant === cant && estado.recienAgregado !== id) return;
+    const p = estado.porId.get(id);
+    if (p) tarjeta.outerHTML = plantilla(p);
+  });
+}
+
+let firmaProductos = '';
+function tarjetaProducto(p, columnas) {
     const cant = cantidadEnLista(p.id);
     const cat = CATEGORIAS[p.categoria] || CATEGORIAS.otros;
     const nombre = esc(p.nombre);
-    const accion = cant
-      ? `<div class="stepper mini" aria-label="${esc(t('{n} en tu lista', { n: cant }))}">
-           <button data-accion="menos" data-id="${p.id}" aria-label="${esc(t('Quitar uno'))}">−</button>
-           <span class="cant">${cant}</span>
-           <button data-accion="mas" data-id="${p.id}" aria-label="${esc(t('Agregar uno'))}">+</button>
-         </div>`
-      : `<button class="btn-agregar" data-accion="agregar" data-id="${p.id}" aria-label="${esc(t('Agregar {nombre} a mi lista', { nombre: p.nombre }))}">${t('+ Agregar')}</button>`;
-    return `<article class="prod-card ${cant ? 'en-lista' : ''} ${estado.recienAgregado === p.id ? 'recien' : ''}">
+    const accion = accionTarjeta(p, cant);
+    return `<article class="prod-card ${cant ? 'en-lista' : ''} ${estado.recienAgregado === p.id ? 'recien' : ''}" data-id="${p.id}" data-cant="${cant}">
       <div class="prod-top">
         <div class="prod-emoji" aria-hidden="true">${cat.emoji}</div>
         <div class="prod-info" data-accion="historial" data-id="${p.id}" title="${esc(t('Ver cómo ha cambiado el precio'))}"><div class="prod-nombre">${nombre}</div><div class="prod-cat">${nombreCategoria(p.categoria)}${cant ? ` · <span class="en-lista-txt">${t('✓ En tu lista')}</span>` : ''}</div></div>
@@ -904,7 +936,6 @@ function renderProductos() {
       </div>
       <div class="precios" style="${columnas}">${celdasPrecio(p)}</div>
     </article>`;
-  }).join('') + verMas;
 }
 
 function renderSelector() {
@@ -916,7 +947,7 @@ function renderSelector() {
   }
   sel.disabled = false;
   sel.innerHTML = estado.listas.map(l =>
-    `<option value="${l._id}" ${estado.lista && l._id === estado.lista._id ? 'selected' : ''}>📝 ${esc(l.nombre)}</option>`
+    `<option value="${l._id}" ${estado.lista && l._id === estado.lista._id ? 'selected' : ''}>${esc(l.nombre)}</option>`
   ).join('');
 }
 
@@ -1093,7 +1124,7 @@ function renderComparar() {
 }
 
 /* ══════════════ AJUSTES ══════════════ */
-const VERSION_APP = '2.1.0';
+const VERSION_APP = '2.2.0';
 
 // Botones de opciones: [valor, texto]
 function segmento(accion, actual, opciones, etiqueta) {
@@ -1177,7 +1208,6 @@ async function refrescarPorAjustes() {
   estado.ofertas.datos = null;
   estado.ofertas.super = 'todos';
   if (document.body.dataset.vista === 'ofertas') cargarOfertas();
-  $('#sub-productos').textContent = listaDeNombres(supersActivos());
   await actualizarComparacion();
   renderTodo();
   if (estado.resultados) await buscarProductos();

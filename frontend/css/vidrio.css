@@ -241,3 +241,52 @@ html[data-movimiento="reducido"] .cascada > *,
 html[data-movimiento="reducido"] .hoja,
 html[data-movimiento="reducido"] .toast,
 html[data-movimiento="reducido"] .splash.oculto { filter: none !important; }
+
+/* ══════════════ RENDIMIENTO (para que la app se sienta rápida en celulares) ══════════════ */
+
+/* 1. El desenfoque de fondo (backdrop-filter) es lo más caro de pintar. Detrás de las tarjetas
+      solo hay un degradado, así que ahí no se nota: se quita y el "vidrio" se logra con el
+      degradado, el reflejo y el borde brillante. El desenfoque real queda donde sí se ve:
+      barra de arriba, dock, hojas emergentes, avisos y el panel de la lista. */
+.prod-card, .tarjeta, .comp-super, .aj-grupo, .tile, .item, .buscador,
+html[data-vidrio="si"] .prod-card, html[data-vidrio="si"] .tarjeta, html[data-vidrio="si"] .comp-super,
+html[data-vidrio="si"] .aj-grupo, html[data-vidrio="si"] .tile:not(.destacado), html[data-vidrio="si"] .item,
+html[data-vidrio="si"] .buscador, html[data-vidrio="si"] .btn-ghost, html[data-vidrio="si"] .chip,
+html[data-vidrio="si"] .segmento, html[data-vidrio="si"] .btn-icono, html[data-vidrio="si"] .btn-cuenta {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+/* Sin desenfoque detrás, las tarjetas de vidrio llevan un fondo un poco más visible */
+:root { --lg-fondo-tarjeta: rgba(22, 36, 56, 0.5); }
+[data-theme="light"] { --lg-fondo-tarjeta: rgba(255, 255, 255, 0.62); }
+html[data-vidrio="si"] .prod-card, html[data-vidrio="si"] .tarjeta, html[data-vidrio="si"] .comp-super,
+html[data-vidrio="si"] .aj-grupo, html[data-vidrio="si"] .tile:not(.destacado), html[data-vidrio="si"] .item {
+  background: var(--lg-reflejo), var(--lg-fondo-tarjeta);
+}
+
+/* 2. (Probado: "content-visibility" en las tarjetas hacía el desplazamiento más lento
+      porque las dibujaba justo al aparecer. Con ~40 tarjetas por página es mejor dibujarlas al inicio.) */
+
+/* 3. Manchas de color del fondo: degradados en vez de un desenfoque gigante (se ven igual) */
+.blob { filter: none; border-radius: 0; }
+.b1 { width: 920px; height: 920px; top: -380px; left: -380px; background: radial-gradient(closest-side, rgba(29,185,106,0.13), rgba(29,185,106,0.05) 55%, transparent); }
+.b2 { width: 820px; height: 820px; bottom: -360px; right: -310px; background: radial-gradient(closest-side, rgba(26,111,196,0.16), rgba(26,111,196,0.06) 55%, transparent); }
+
+/* 4. El fondo de la página va en una capa fija: así no se vuelve a pintar al desplazarte */
+body, [data-theme="light"] body { background: transparent; background-attachment: scroll; }
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(135deg, var(--verde-deep) 0%, var(--azul-dark) 55%, var(--azul-deep) 100%);
+}
+[data-theme="light"] body::before { background: linear-gradient(135deg, #e3f7ec 0%, #eef5fc 55%, #e4eefa 100%); }
+
+/* 5. Difuminados de las animaciones: más suaves y solo en pocos elementos a la vez */
+.cascada > *:nth-child(n+9) { animation-name: subir-suave; }
+@keyframes subir-difuso {
+  from { opacity: 0; transform: translateY(16px) scale(.98); filter: blur(5px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+@keyframes seccion-entrar-difuso {
+  from { opacity: 0; transform: translateX(calc(var(--dir) * 24px)); filter: blur(5px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
