@@ -432,6 +432,8 @@ Object.assign(TRADUCCIONES, {
   'Todas': 'All',
   'Reducidas': 'Reduced',
 
+  'Precios referenciales · El precio válido es el de la tienda.': "Reference prices · The valid price is the store's price.",
+
   // Ofertas de hoy
   'Ofertas': 'Deals',
   'de hoy': 'of the day',

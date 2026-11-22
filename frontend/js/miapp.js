@@ -445,6 +445,10 @@ function hojaRenombrar() {
 }
 
 /* ── CUENTA (opcional) ── */
+/* "¿Olvidaste tu contraseña?": oculto por ahora (falta configurar el envío de correos con Brevo).
+   Para volver a mostrarlo, cambiá false por true. Ver backend/GUIA.md → "Olvidé mi contraseña". */
+const RECUPERAR_CONTRASENA = false;
+
 function hojaCuenta(modo = 'entrar') {
   if (estado.usuario) return hojaPerfil();
   const crear = modo === 'crear';
@@ -470,7 +474,7 @@ function hojaCuenta(modo = 'entrar') {
         <button class="btn-ghost" type="button" data-accion="cerrar">${t('Ahora no')}</button>
         <button class="btn-primary" type="submit">${crear ? t('Crear cuenta') : t('Entrar')}</button>
       </div>
-      ${crear ? '' : `<p class="nota-cuenta"><button type="button" class="enlace" data-accion="olvide">${t('¿Olvidaste tu contraseña?')}</button></p>`}
+      ${crear || !RECUPERAR_CONTRASENA ? '' : `<p class="nota-cuenta"><button type="button" class="enlace" data-accion="olvide">${t('¿Olvidaste tu contraseña?')}</button></p>`}
     </form>`);
 }
 
@@ -1124,7 +1128,7 @@ function renderComparar() {
 }
 
 /* ══════════════ AJUSTES ══════════════ */
-const VERSION_APP = '2.2.0';
+const VERSION_APP = '2.2.2';
 
 // Botones de opciones: [valor, texto]
 function segmento(accion, actual, opciones, etiqueta) {

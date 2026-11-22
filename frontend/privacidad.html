@@ -10,8 +10,10 @@
     1. Datos del responsable ya completados: Equipo Mi Súper: Jaime Francisco López Márquez y Loammy José Ramírez Maltez,
        misupernicaragua@gmail.com, Managua, Nicaragua. Los reportes de precios
        se borran solos a los 6 meses (backend/models/Reporte.js).
-    2. Confirma qué servicio de correo usas para "Olvidé mi contraseña"
-       (Brevo u otro) y ajusta la sección 4.
+    2. "Olvidé mi contraseña" está DESACTIVADO por ahora (RECUPERAR_CONTRASENA en
+       frontend/js/miapp.js), así que esta política no lo menciona. Al activarlo,
+       volvé a agregar: el código cifrado que vence en 1 hora (secciones 2, 6 y 8),
+       el envío del correo (sección 3) y el servicio de correos, ej. Brevo (sección 4).
     3. Pide a un abogado con práctica en Nicaragua que lo revise.
     4. Si cambias el contenido, actualiza la fecha y la versión aquí y en
        backend/helpers/legal.js (VERSION_TERMINOS).
@@ -99,7 +101,6 @@
           siquiera nosotros.</li>
         <li>La <strong>fecha</strong> en que aceptaste los Términos de uso y esta política, y qué
           <strong>versión</strong> aceptaste.</li>
-        <li>Si pedís recuperar tu contraseña: un código cifrado que vence en 1 hora.</li>
       </ul>
       <p><strong>Si reportás un precio incorrecto:</strong> el mensaje, el producto y, si decidís dejarlo, un correo
         de contacto. Si tenés sesión iniciada, el reporte queda asociado a tu cuenta.</p>
@@ -114,7 +115,6 @@
       <ul>
         <li>guardar y mostrarte tus listas y gastos, en este dispositivo o en todos los tuyos si tenés cuenta;</li>
         <li>mantener tu sesión iniciada;</li>
-        <li>enviarte el correo para recuperar tu contraseña cuando lo pidas;</li>
         <li>revisar y corregir los precios que nos reportes;</li>
         <li>proteger el servicio contra abusos.</li>
       </ul>
@@ -127,8 +127,6 @@
       <ul>
         <li><strong>MongoDB Atlas</strong>: la base de datos donde se guardan tus listas, gastos y cuenta.</li>
         <li><strong>Render</strong>: el servidor donde funciona la app.</li>
-        <li>El <strong>servicio de envío de correos</strong> (por ejemplo, Brevo), solo cuando pedís recuperar tu
-          contraseña.</li>
         <li><strong>Google Fonts</strong>: las páginas cargan sus tipos de letra desde servidores de Google, por lo
           que tu navegador se conecta a ellos y Google puede recibir tu dirección IP.</li>
       </ul>
@@ -157,7 +155,6 @@
         <li><strong>Listas y gastos sin cuenta</strong>: hasta que los borres desde la app. Si borrás los datos de tu
           navegador, la clave del dispositivo se pierde y ya no podrás ver esas listas; podés escribirnos para que
           las eliminemos.</li>
-        <li><strong>Códigos para recuperar la contraseña</strong>: vencen en 1 hora.</li>
         <li><strong>Reportes de precios</strong>: se borran automáticamente a los 6 meses de recibidos.</li>
       </ul>
 
@@ -185,8 +182,7 @@
       <h2 id="seguridad">8. Cómo protegemos tus datos</h2>
       <ul>
         <li>La conexión con la app es cifrada (HTTPS).</li>
-        <li>Las contraseñas se guardan cifradas con bcrypt, y los códigos para recuperarlas también se guardan
-          cifrados y vencen en 1 hora.</li>
+        <li>Las contraseñas se guardan cifradas con bcrypt.</li>
         <li>Se limitan los intentos de inicio de sesión para evitar que adivinen contraseñas.</li>
         <li>Las sesiones vencen a los 30 días.</li>
         <li>Las funciones de administración están protegidas con una clave.</li>
@@ -243,7 +239,6 @@
           even us.</li>
         <li>The <strong>date</strong> you accepted the Terms of use and this policy, and which
           <strong>version</strong> you accepted.</li>
-        <li>If you ask to reset your password: an encrypted code that expires in 1 hour.</li>
       </ul>
       <p><strong>If you report a wrong price:</strong> the message, the product and, if you choose to leave it, a
         contact email. If you are signed in, the report is linked to your account.</p>
@@ -258,7 +253,6 @@
         <li>to save and show your lists and expenses, on this device or on all your devices if you have an
           account;</li>
         <li>to keep you signed in;</li>
-        <li>to send you the password reset email when you ask for it;</li>
         <li>to review and fix the prices you report;</li>
         <li>to protect the service against abuse.</li>
       </ul>
@@ -271,8 +265,6 @@
       <ul>
         <li><strong>MongoDB Atlas</strong>: the database where your lists, expenses and account are stored.</li>
         <li><strong>Render</strong>: the server where the app runs.</li>
-        <li>The <strong>email delivery service</strong> (for example, Brevo), only when you ask to reset your
-          password.</li>
         <li><strong>Google Fonts</strong>: the pages load their fonts from Google's servers, so your browser connects
           to them and Google may receive your IP address.</li>
       </ul>
@@ -300,7 +292,6 @@
         <li><strong>Lists and expenses without an account</strong>: until you delete them in the app. If you clear
           your browser data, the device key is lost and you won't be able to see those lists anymore; you can write
           to us so we delete them.</li>
-        <li><strong>Password reset codes</strong>: expire after 1 hour.</li>
         <li><strong>Price reports</strong>: automatically deleted 6 months after they are received.</li>
       </ul>
 
@@ -328,8 +319,7 @@
       <h2>8. How we protect your data</h2>
       <ul>
         <li>The connection to the app is encrypted (HTTPS).</li>
-        <li>Passwords are stored encrypted with bcrypt, and reset codes are also stored encrypted and expire in 1
-          hour.</li>
+        <li>Passwords are stored encrypted with bcrypt.</li>
         <li>Sign-in attempts are limited to prevent password guessing.</li>
         <li>Sessions expire after 30 days.</li>
         <li>Admin functions are protected with a key.</li>

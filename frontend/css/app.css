@@ -558,3 +558,6 @@ html[data-movimiento="reducido"] *, html[data-movimiento="reducido"] *::before, 
   animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important;
   transition-duration: .01ms !important; scroll-behavior: auto !important;
 }
+
+/* Línea final de Productos y Ofertas: "Precios referenciales · El precio válido es el de la tienda." */
+.pie-precios { margin: 18px 0 4px; text-align: center; font-size: 11px; font-weight: 600; color: var(--text-3); }
