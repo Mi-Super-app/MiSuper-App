@@ -422,6 +422,16 @@ Object.assign(TRADUCCIONES, {
   'el súper más caro': 'the most expensive store',
   '📅 Gasto guardado. 💚 Ahorraste {monto} frente a {super}.': '📅 Spending saved. 💚 You saved {monto} vs. {super}.',
 
+  // Liquid Glass y animaciones
+  'Efecto Liquid Glass': 'Liquid Glass effect',
+  'Superficies de vidrio con reflejos. Desactivalo si tu celular va lento.': 'Glass surfaces with reflections. Turn it off if your phone is slow.',
+  'Activado': 'On',
+  'Desactivado': 'Off',
+  'Animaciones': 'Animations',
+  'Reducidas quita los movimientos, transiciones y difuminados de la app.': 'Reduced removes the app\'s movement, transitions and blur effects.',
+  'Todas': 'All',
+  'Reducidas': 'Reduced',
+
   // Ofertas de hoy
   'Ofertas': 'Deals',
   'de hoy': 'of the day',

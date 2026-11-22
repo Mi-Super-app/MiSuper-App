@@ -144,7 +144,8 @@
 .menu-movil a:nth-child(6) { animation-delay: .15s; }
 
 /* ── MOVIMIENTO REDUCIDO (accesibilidad) ── */
+/* Si en la app se eligió "Animaciones: Todas" (data-movimiento="todas"), se mantienen igual */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  html:not([data-movimiento="todas"]) *, html:not([data-movimiento="todas"]) *::before, html:not([data-movimiento="todas"]) *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
   ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
 }

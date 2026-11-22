@@ -66,7 +66,7 @@ function cantidadEnLista(prodId) {
 }
 
 /* ── Animaciones ── */
-const sinMovimiento = () => AJUSTES.movimiento === 'reducido' || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sinMovimiento = () => document.documentElement.getAttribute('data-movimiento') === 'reducido';
 const pausa = ms => new Promise(r => setTimeout(r, sinMovimiento() ? 0 : ms));
 
 // Vuelve a disparar una animación CSS quitando y poniendo la clase
@@ -1093,7 +1093,7 @@ function renderComparar() {
 }
 
 /* ══════════════ AJUSTES ══════════════ */
-const VERSION_APP = '2.0.0';
+const VERSION_APP = '2.1.0';
 
 // Botones de opciones: [valor, texto]
 function segmento(accion, actual, opciones, etiqueta) {
@@ -1119,6 +1119,8 @@ function renderAjustes() {
     ${fila(t('Tema'), t('Automático usa el mismo modo que tu celular.'),
       segmento('aj-tema', tema, [['light', '☀️ ' + t('Claro')], ['dark', '🌙 ' + t('Oscuro')], ['auto', '📱 ' + t('Automático')]], t('Tema')))}
     ${fila(t('Tamaño de letra'), '', segmento('aj-letra', AJUSTES.letra, [['normal', t('Normal')], ['grande', t('Grande')]], t('Tamaño de letra')))}
+    ${fila(t('Efecto Liquid Glass'), t('Superficies de vidrio con reflejos. Desactivalo si tu celular va lento.'),
+      segmento('aj-vidrio', AJUSTES.vidrio === 'no' ? 'no' : 'si', [['si', '✨ ' + t('Activado')], ['no', t('Desactivado')]], t('Efecto Liquid Glass')))}
   </div>`;
 
   const compras = `<div class="aj-grupo">
@@ -1163,8 +1165,8 @@ function renderAjustes() {
 
   const accesibilidad = `<div class="aj-grupo">
     <h2>♿ ${t('Accesibilidad')}</h2>
-    ${fila(t('Reducir animaciones'), t('Quita los movimientos y transiciones de la app.'),
-      segmento('aj-movimiento', AJUSTES.movimiento, [['auto', t('Como el celular')], ['reducido', t('Reducir')]], t('Reducir animaciones')))}
+    ${fila(t('Animaciones'), t('Reducidas quita los movimientos, transiciones y difuminados de la app.'),
+      segmento('aj-movimiento', document.documentElement.getAttribute('data-movimiento') === 'reducido' ? 'reducido' : 'todas', [['todas', t('Todas')], ['reducido', t('Reducidas')]], t('Animaciones')))}
   </div>`;
 
   caja.innerHTML = `<div class="ajustes">${apariencia}${compras}${compartir}${cuenta}${acerca}${accesibilidad}</div>`;
@@ -1729,6 +1731,23 @@ function dibujarHistorial(rango) {
     </tbody></table></details>` : '';
 }
 
+/* ══════════════ DOCK (celular) ══════════════
+   Al bajar por la página el dock se achica (solo íconos); al subir, vuelve a su tamaño. */
+(function () {
+  let ultimo = window.scrollY;
+  let recorrido = 0;
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    const paso = y - ultimo;
+    ultimo = y;
+    if (y < 80) { document.body.classList.remove('dock-mini'); recorrido = 0; return; }
+    if (Math.sign(paso) !== Math.sign(recorrido)) recorrido = 0;
+    recorrido += paso;
+    if (recorrido > 60) document.body.classList.add('dock-mini');
+    else if (recorrido < -30) document.body.classList.remove('dock-mini');
+  }, { passive: true });
+})();
+
 /* ══════════════ EVENTOS ══════════════ */
 const acciones = {
   ir: el => irA(el.dataset.vista),
@@ -1786,6 +1805,11 @@ const acciones = {
   'aj-letra': el => {
     guardarAjustes({ letra: el.dataset.valor });
     document.documentElement.setAttribute('data-letra', el.dataset.valor);
+    renderAjustes();
+  },
+  'aj-vidrio': el => {
+    guardarAjustes({ vidrio: el.dataset.valor });
+    document.documentElement.setAttribute('data-vidrio', el.dataset.valor);
     renderAjustes();
   },
   'aj-movimiento': el => {

@@ -132,10 +132,11 @@ const ORDEN_SUPERS = ['La Colonia', 'La Unión', 'Walmart'];
    supers:     los supermercados que la persona quiere comparar
    presupuesto: el monto que se pone solo al crear una lista
    orden:      'nombre' | 'precio' | 'unidad'  (cómo se ordenan los productos)
-   movimiento: 'auto' (lo que diga el celular) | 'reducido'
+   movimiento: 'auto' (lo que diga el celular) | 'todas' | 'reducido'
+   vidrio:     'si' | 'no'  (efecto Liquid Glass)
    El tema (claro / oscuro / automático) va aparte en "misuper-theme". */
 const LS_AJUSTES = 'misuper-ajustes';
-const AJUSTES_BASE = { idioma: 'es', letra: 'normal', supers: ORDEN_SUPERS, presupuesto: 1000, orden: 'nombre', movimiento: 'auto' };
+const AJUSTES_BASE = { idioma: 'es', letra: 'normal', supers: ORDEN_SUPERS, presupuesto: 1000, orden: 'nombre', movimiento: 'auto', vidrio: 'si' };
 function leerAjustes() {
   let guardados = {};
   try { guardados = JSON.parse(leerLS(LS_AJUSTES) || '{}') || {}; } catch { }

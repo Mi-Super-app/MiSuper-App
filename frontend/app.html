@@ -17,9 +17,10 @@
   <link rel="stylesheet" href="css/app.css">
   <link rel="stylesheet" href="css/theme.css">
   <link rel="stylesheet" href="css/animaciones.css">
+  <link rel="stylesheet" href="css/vidrio.css">
   <script>
     /* Aplica los ajustes guardados antes de pintar la página (evita el parpadeo):
-       tema, tamaño de letra, animaciones e idioma */
+       tema, tamaño de letra, animaciones, efecto Liquid Glass e idioma */
     (function () {
       var raiz = document.documentElement, t = 'dark', a = {};
       try {
@@ -30,7 +31,10 @@
       } catch (e) { }
       raiz.setAttribute('data-theme', t);
       raiz.setAttribute('data-letra', a.letra === 'grande' ? 'grande' : 'normal');
-      raiz.setAttribute('data-movimiento', a.movimiento === 'reducido' ? 'reducido' : 'auto');
+      // Animaciones: "todas" o "reducido". Si no se eligió, se sigue lo que diga el celular
+      var reducir = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      raiz.setAttribute('data-movimiento', a.movimiento === 'reducido' || a.movimiento === 'todas' ? a.movimiento : (reducir ? 'reducido' : 'todas'));
+      raiz.setAttribute('data-vidrio', a.vidrio === 'no' ? 'no' : 'si');
       raiz.setAttribute('lang', a.idioma === 'en' ? 'en' : 'es');
     })();
   </script>

@@ -1,0 +1,243 @@
+/* ══════════════════════════════════════════════════════════
+   MI SÚPER · LIQUID GLASS, DOCK Y ANIMACIONES CON DIFUMINADO
+   (solo app.html; se carga después de app.css, theme.css y animaciones.css)
+
+   - Efecto "Liquid Glass": superficies de vidrio translúcido con desenfoque,
+     reflejo de luz y borde brillante. Se activa o desactiva en
+     Ajustes → Apariencia (html[data-vidrio="si" | "no"]).
+     Desactivado: superficies sólidas, sin desenfoque (va mejor en celulares lentos).
+   - Dock: en el celular, la barra de abajo flota como un "dock" redondeado.
+   - Animaciones con difuminado (blur) al cambiar de sección, abrir hojas, etc.
+     Se apagan con Ajustes → Accesibilidad → Animaciones: Reducidas.
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Valores del vidrio (oscuro) ── */
+:root {
+  --lg-fondo: rgba(22, 36, 56, 0.38);
+  --lg-fondo-fuerte: rgba(16, 28, 46, 0.62);
+  --lg-borde: rgba(255, 255, 255, 0.16);
+  --lg-borde-luz: rgba(255, 255, 255, 0.34);
+  --lg-reflejo: linear-gradient(140deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.04) 32%, rgba(255,255,255,0) 55%, rgba(255,255,255,0.05) 100%);
+  --lg-brillo: inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -1px 0 rgba(255,255,255,0.05), inset 0 0 18px rgba(255,255,255,0.04);
+  --lg-sombra: 0 10px 36px rgba(0, 0, 0, 0.32);
+  --lg-desenfoque: blur(22px) saturate(185%);
+  --dock-alto: 66px;
+}
+/* ── Valores del vidrio (claro) ── */
+[data-theme="light"] {
+  --lg-fondo: rgba(255, 255, 255, 0.5);
+  --lg-fondo-fuerte: rgba(255, 255, 255, 0.74);
+  --lg-borde: rgba(255, 255, 255, 0.7);
+  --lg-borde-luz: rgba(255, 255, 255, 0.95);
+  --lg-reflejo: linear-gradient(140deg, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.2) 35%, rgba(255,255,255,0) 60%, rgba(255,255,255,0.25) 100%);
+  --lg-brillo: inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(8,40,60,0.05), inset 0 0 18px rgba(255,255,255,0.35);
+  --lg-sombra: 0 10px 32px rgba(8, 40, 60, 0.12);
+  --lg-desenfoque: blur(22px) saturate(170%);
+}
+
+/* ══════════════ LIQUID GLASS ACTIVADO ══════════════ */
+html[data-vidrio="si"] .app-header,
+html[data-vidrio="si"] .prod-card,
+html[data-vidrio="si"] .tarjeta,
+html[data-vidrio="si"] .comp-super,
+html[data-vidrio="si"] .aj-grupo,
+html[data-vidrio="si"] .tile:not(.destacado),
+html[data-vidrio="si"] .item,
+html[data-vidrio="si"] .buscador,
+html[data-vidrio="si"] .tabbar {
+  background: var(--lg-reflejo), var(--lg-fondo);
+  -webkit-backdrop-filter: var(--lg-desenfoque);
+  backdrop-filter: var(--lg-desenfoque);
+  border-color: var(--lg-borde);
+  box-shadow: var(--lg-brillo), var(--lg-sombra);
+}
+html[data-vidrio="si"] .app-header { box-shadow: var(--lg-brillo); border-bottom-color: var(--lg-borde); }
+html[data-vidrio="si"] .item { box-shadow: var(--lg-brillo); }
+html[data-vidrio="si"] .buscador { box-shadow: var(--lg-brillo); }
+html[data-vidrio="si"] .buscador:focus-within { border-color: rgba(77, 255, 160, 0.55); box-shadow: var(--lg-brillo), 0 0 0 4px rgba(77, 255, 160, 0.12); }
+
+/* Botones, chips y selectores de vidrio */
+html[data-vidrio="si"] .btn-ghost,
+html[data-vidrio="si"] .chip,
+html[data-vidrio="si"] .segmento,
+html[data-vidrio="si"] .btn-icono,
+html[data-vidrio="si"] .btn-cuenta {
+  background: var(--lg-reflejo), var(--lg-fondo);
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
+  border-color: var(--lg-borde);
+  box-shadow: var(--lg-brillo);
+}
+html[data-vidrio="si"] .chip.activa,
+html[data-vidrio="si"] .tab-esc.activa {
+  background: linear-gradient(140deg, rgba(77,255,160,0.3), rgba(34,212,255,0.12)), var(--lg-fondo);
+  border-color: rgba(77, 255, 160, 0.45);
+  box-shadow: var(--lg-brillo), 0 6px 22px rgba(29, 185, 106, 0.22);
+}
+
+/* Hoja emergente y avisos: vidrio más opaco (para leer bien) */
+html[data-vidrio="si"] .hoja {
+  background: var(--lg-reflejo), var(--lg-fondo-fuerte);
+  -webkit-backdrop-filter: blur(30px) saturate(190%);
+  backdrop-filter: blur(30px) saturate(190%);
+  border-color: var(--lg-borde-luz);
+  box-shadow: var(--lg-brillo), 0 -10px 50px rgba(0, 0, 0, 0.35);
+}
+html[data-vidrio="si"] .fondo-hoja { background: rgba(2, 8, 18, 0.35); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+html[data-vidrio="si"][data-theme="light"] .fondo-hoja { background: rgba(8, 24, 38, 0.18); }
+html[data-vidrio="si"] .toast {
+  background: var(--lg-reflejo), var(--lg-fondo-fuerte);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  border-color: var(--lg-borde-luz);
+  box-shadow: var(--lg-brillo), var(--lg-sombra);
+}
+html[data-vidrio="si"][data-theme="light"] .toast { color: var(--text-1); }
+
+/* Panel de la lista (computadora) */
+@media (min-width: 1024px) {
+  html[data-vidrio="si"] #vista-lista {
+    background: var(--lg-reflejo), var(--lg-fondo);
+    -webkit-backdrop-filter: var(--lg-desenfoque);
+    backdrop-filter: var(--lg-desenfoque);
+    border-color: var(--lg-borde);
+    box-shadow: var(--lg-brillo), var(--lg-sombra);
+  }
+}
+
+/* Tarjetas: se levantan y brillan al pasar el mouse (computadora) */
+@media (hover: hover) {
+  html[data-vidrio="si"] .prod-card,
+  html[data-vidrio="si"] .comp-super { transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s, border-color .25s; }
+  html[data-vidrio="si"] .prod-card:hover,
+  html[data-vidrio="si"] .comp-super:hover {
+    transform: translateY(-3px);
+    border-color: var(--lg-borde-luz);
+    box-shadow: var(--lg-brillo), 0 16px 44px rgba(0, 0, 0, 0.36), 0 0 0 1px rgba(77, 255, 160, 0.12);
+  }
+}
+
+/* ══════════════ LIQUID GLASS DESACTIVADO: superficies sólidas ══════════════ */
+html[data-vidrio="no"] .app-header,
+html[data-vidrio="no"] .prod-card,
+html[data-vidrio="no"] .tarjeta,
+html[data-vidrio="no"] .comp-super,
+html[data-vidrio="no"] .aj-grupo,
+html[data-vidrio="no"] .tile:not(.destacado),
+html[data-vidrio="no"] .tabbar,
+html[data-vidrio="no"] .hoja,
+html[data-vidrio="no"] .fondo-hoja,
+html[data-vidrio="no"] #vista-lista {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html[data-vidrio="no"] .app-header,
+html[data-vidrio="no"] .tabbar { background: #0c1a2b; }
+html[data-vidrio="no"] .prod-card,
+html[data-vidrio="no"] .tarjeta,
+html[data-vidrio="no"] .comp-super,
+html[data-vidrio="no"] .aj-grupo,
+html[data-vidrio="no"] .tile:not(.destacado) { background: #10223a; }
+html[data-vidrio="no"][data-theme="light"] .app-header,
+html[data-vidrio="no"][data-theme="light"] .tabbar,
+html[data-vidrio="no"][data-theme="light"] .prod-card,
+html[data-vidrio="no"][data-theme="light"] .tarjeta,
+html[data-vidrio="no"][data-theme="light"] .comp-super,
+html[data-vidrio="no"][data-theme="light"] .aj-grupo,
+html[data-vidrio="no"][data-theme="light"] .tile:not(.destacado) { background: #ffffff; }
+@media (min-width: 1024px) {
+  html[data-vidrio="no"] #vista-lista { background: #0f2036; }
+  html[data-vidrio="no"][data-theme="light"] #vista-lista { background: #ffffff; }
+}
+
+/* ══════════════ DOCK (barra de abajo en el celular) ══════════════ */
+@media (max-width: 1023px) {
+  :root { --tabbar-h: calc(var(--dock-alto) + 14px); }
+  .tabbar {
+    left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom));
+    height: var(--dock-alto); padding: 0 5px; padding-bottom: 0;
+    border-radius: 26px; border: 1px solid var(--border); border-top: 1px solid var(--border);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    transition: height .35s cubic-bezier(.2,.9,.3,1.2), bottom .35s cubic-bezier(.2,.9,.3,1.2), border-radius .35s;
+  }
+  html[data-vidrio="si"] .tabbar { border-color: var(--lg-borde-luz); }
+  .tab { position: relative; z-index: 1; gap: 2px; font-size: 10.5px; letter-spacing: -.1px; }
+  .tab > span:last-child { transition: opacity .25s, transform .25s; }
+  .tab-ico { font-size: 21px; transition: transform .35s cubic-bezier(.2,1.6,.4,1), filter .2s; }
+  .tab.activa .tab-ico { transform: translateY(-1px) scale(1.14); }
+
+  /* La "burbuja" que se desliza detrás de la pestaña activa */
+  .tab-indicador {
+    top: 6px; bottom: 6px; left: 5px; height: auto; width: calc((100% - 10px) / 6);
+    border-radius: 20px; display: block;
+    background: linear-gradient(140deg, rgba(77,255,160,0.26), rgba(34,212,255,0.12));
+    border: 1px solid rgba(77, 255, 160, 0.35);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 18px rgba(29, 185, 106, 0.25);
+    transition: transform .5s cubic-bezier(.3,1.3,.5,1);
+  }
+  .tab-indicador::before { display: none; }
+  [data-theme="light"] .tab-indicador { background: linear-gradient(140deg, rgba(15,154,87,0.18), rgba(10,134,184,0.1)); border-color: rgba(15,154,87,0.3); }
+
+  /* Al bajar por la página el dock se achica (solo íconos); al subir, vuelve */
+  body.dock-mini .tabbar { height: 52px; bottom: calc(8px + env(safe-area-inset-bottom)); }
+  body.dock-mini .tab > span:last-child { opacity: 0; transform: translateY(6px); position: absolute; }
+  body.dock-mini .tab-indicador { top: 5px; bottom: 5px; }
+
+  /* Avisos encima del dock */
+  .toast { bottom: calc(var(--dock-alto) + 24px + env(safe-area-inset-bottom)); border-radius: 18px; }
+}
+
+/* ══════════════ ANIMACIONES CON DIFUMINADO ══════════════ */
+/* Cambio de sección: aparece desde un costado, desenfocada */
+.vista.entrando { animation: seccion-entrar-difuso .45s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes seccion-entrar-difuso {
+  from { opacity: 0; transform: translateX(calc(var(--dir) * 28px)) scale(.99); filter: blur(10px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+
+/* Tarjetas en cascada: suben y se enfocan (solo las primeras, para que vaya fluido) */
+.cascada > *:nth-child(-n+16) { animation-name: subir-difuso; }
+@keyframes subir-difuso {
+  from { opacity: 0; transform: translateY(18px) scale(.97); filter: blur(8px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+
+/* Hoja emergente: entra desenfocada; el fondo se difumina poco a poco */
+.hoja { animation: hoja-subir-difusa .42s cubic-bezier(.2,1,.3,1) backwards; }
+@keyframes hoja-subir-difusa {
+  from { transform: translateY(60px) scale(.98); opacity: 0; filter: blur(12px); }
+  to { transform: none; opacity: 1; filter: blur(0); }
+}
+@media (min-width: 600px) {
+  .hoja { animation: hoja-centro-difusa .38s cubic-bezier(.2,1.2,.4,1) backwards; }
+  @keyframes hoja-centro-difusa {
+    from { opacity: 0; transform: scale(.9); filter: blur(12px); }
+    to { opacity: 1; transform: none; filter: blur(0); }
+  }
+}
+.fondo-hoja { animation: fondo-difuso .35s ease backwards; }
+@keyframes fondo-difuso { from { opacity: 0; -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0); } }
+.fondo-hoja.cerrando .hoja { filter: blur(8px); transition: transform .22s ease, opacity .22s ease, filter .22s ease; }
+
+/* Avisos: aparecen desenfocados */
+.toast { filter: blur(6px); transition: opacity .3s ease, transform .4s cubic-bezier(.2,1.3,.4,1), filter .3s ease; }
+.toast.visible { filter: blur(0); }
+
+/* Pantalla de carga: se va difuminándose */
+.splash.oculto { filter: blur(14px); transition: opacity .55s ease, visibility .55s ease, transform .55s ease, filter .55s ease; }
+
+/* Chip y pestaña al tocarlos: rebote suave */
+.chip.activa { animation: chip-activo .4s cubic-bezier(.2,1.6,.4,1); }
+@keyframes chip-activo { 40% { transform: scale(1.06); } }
+.tab.activa .tab-ico { animation: icono-activo .5s cubic-bezier(.2,1.6,.4,1); }
+@keyframes icono-activo { 30% { transform: translateY(-4px) scale(1.25); } }
+
+/* ══════════════ ANIMACIONES: TODAS / REDUCIDAS ══════════════
+   "Todas" (data-movimiento="todas") mantiene las animaciones aunque el celular pida
+   reducir movimiento; "Reducidas" las apaga (ver app.css). Sin el ajuste, la app sigue
+   lo que diga el celular (el valor inicial se calcula al abrir la app). */
+html[data-movimiento="reducido"] .vista.entrando,
+html[data-movimiento="reducido"] .cascada > *,
+html[data-movimiento="reducido"] .hoja,
+html[data-movimiento="reducido"] .toast,
+html[data-movimiento="reducido"] .splash.oculto { filter: none !important; }
