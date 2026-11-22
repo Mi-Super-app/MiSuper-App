@@ -27,16 +27,6 @@ Funciona en celular y computadora, y se puede **instalar como app** desde el nav
 
 > **Aviso:** Mi Súper es un proyecto independiente. No está afiliado a La Colonia, La Unión, Walmart ni a las empresas propietarias de esas tiendas. Los precios son **referenciales**; el precio válido siempre es el de la tienda.
 
-<!--
-## Capturas
-
-Agregá aquí capturas de la app (guardalas en docs/capturas/):
-
-| Inicio | Productos | Comparar |
-|---|---|---|
-| ![Inicio](docs/capturas/inicio.png) | ![Productos](docs/capturas/productos.png) | ![Comparar](docs/capturas/comparar.png) |
--->
-
 ## Funciones
 
 ### 🛒 Productos y precios
