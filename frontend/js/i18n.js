@@ -15,6 +15,7 @@ Object.assign(TRADUCCIONES, {
   'Mi lista': 'My list',
   'Gastos': 'Spending',
   'Lista activa': 'Active list',
+  'Elegir lista': 'Choose list',
   'Los precios se actualizan solos todos los días': 'Prices update automatically every day',
   'Cargando precios…': 'Loading prices…',
   'No se pudo conectar con Mi Súper. Revisá tu internet.': "Couldn't connect to Mi Súper. Check your internet.",

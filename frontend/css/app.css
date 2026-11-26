@@ -45,7 +45,7 @@ body {
 }
 button, input, select { font-family: inherit; color: inherit; }
 button { cursor: pointer; }
-.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; border: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
 [hidden] { display: none !important; }
 
 ::-webkit-scrollbar { width: 6px; }
@@ -92,7 +92,7 @@ button { cursor: pointer; }
   border-bottom: 1px solid rgba(255,255,255,0.07);
 }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
-.brand-text { display: flex; flex-direction: column; line-height: .9; }
+.brand-text { display: flex; flex-direction: column; line-height: 1.1; }
 .brand-mi { font-family: var(--f-titulo); font-size: 10px; letter-spacing: .35em; color: rgba(255,255,255,0.4); font-weight: 700; }
 .brand-super {
   font-family: var(--f-titulo); font-size: 19px; letter-spacing: -.02em;
@@ -251,11 +251,16 @@ body[data-vista="ajustes"] #vista-ajustes { display: block; }
 /* ── MI LISTA ── */
 .panel-lista { }
 .lista-cabeza { display: flex; gap: 8px; margin-bottom: 12px; }
-.selector-lista { flex: 1; min-width: 0; }
+.selector-lista { flex: 1; min-width: 0; position: relative; }
+/* Sin la flecha del navegador (en algunos celulares se veía como una "u"): usamos un ícono propio */
 .selector-lista select {
-  width: 100%; height: 42px; padding: 0 12px; border-radius: 12px; font-size: 15px; font-weight: 650;
-  background: rgba(255,255,255,0.06); border: 1px solid var(--border); appearance: auto;
+  width: 100%; height: 42px; padding: 0 38px 0 14px; border-radius: 12px; font-size: 15px; font-weight: 650;
+  background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+  -webkit-appearance: none; -moz-appearance: none; appearance: none;
+  text-overflow: ellipsis; white-space: nowrap; overflow: hidden; text-indent: 0;
 }
+.selector-lista select::-ms-expand { display: none; }
+.selector-flecha { position: absolute; right: 12px; top: 50%; width: 18px; height: 18px; transform: translateY(-50%); color: var(--text-2); pointer-events: none; }
 .selector-lista select option { color: #0b1626; }
 
 .tarjeta { background: var(--glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 20px; padding: 16px; }

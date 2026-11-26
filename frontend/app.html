@@ -159,10 +159,10 @@
     <!-- ══ MI LISTA (panel lateral en computadora) ══ -->
     <aside class="vista panel-lista" id="vista-lista" aria-label="Mi lista">
       <div class="lista-cabeza">
-        <label class="selector-lista">
-          <span class="sr-only" data-i18n>Lista activa</span>
-          <select id="selector-lista" aria-label="Elegir lista"></select>
-        </label>
+        <div class="selector-lista">
+          <select id="selector-lista" aria-label="Elegir lista" data-i18n-aria></select>
+          <svg class="ico selector-flecha" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+        </div>
         <button class="btn-icono" data-accion="nueva-lista" title="Nueva lista" aria-label="Nueva lista"><svg class="ico"><use href="#i-plus"/></svg></button>
         <button class="btn-icono" data-accion="opciones-lista" title="Opciones de la lista" aria-label="Opciones de la lista"><svg class="ico"><use href="#i-ellipsis"/></svg></button>
       </div>
