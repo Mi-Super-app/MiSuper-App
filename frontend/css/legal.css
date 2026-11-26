@@ -21,39 +21,39 @@ html[lang="en"] [data-idioma="es"] { display: none !important; }
   backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
 }
 .legal-doc h1 {
-  font-family: 'Bebas Neue', sans-serif; font-weight: 400;
-  font-size: clamp(34px, 7vw, 48px); letter-spacing: .03em; line-height: 1;
+  font-family: var(--f-titulo); font-weight: 800;
+  font-size: clamp(26.5px, 7vw, 34.5px); letter-spacing: -.02em; line-height: 1;
   background: linear-gradient(135deg, var(--mint), var(--cyan));
   -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
 }
-.legal-fecha { margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--text-3); }
+.legal-fecha { margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--text-3); }
 .legal-intro {
   margin-top: 18px; padding: 14px 16px; border-radius: 14px;
   background: rgba(29,185,106,0.08); border: 1px solid rgba(29,185,106,0.22);
   font-size: 14px; line-height: 1.6; color: var(--text-1);
 }
 .legal-doc h2 {
-  margin-top: 28px; font-size: 17px; font-weight: 900; color: var(--text-1);
+  margin-top: 28px; font-size: 17px; font-weight: 700; color: var(--text-1);
   scroll-margin-top: calc(var(--header-h) + 12px);
 }
 .legal-doc p, .legal-doc li { margin-top: 10px; font-size: 15px; line-height: 1.7; color: var(--text-2); }
 .legal-doc ul { padding-left: 22px; }
 .legal-doc li { margin-top: 6px; }
 .legal-doc strong { color: var(--text-1); }
-.legal-doc a { color: var(--mint); font-weight: 700; }
+.legal-doc a { color: var(--mint); font-weight: 600; }
 .legal-doc code {
-  font-family: 'Space Mono', monospace; font-size: 12.5px;
+  font-family: var(--f-num); font-size: 12.5px;
   padding: 1px 6px; border-radius: 6px; background: rgba(255,255,255,0.08); color: var(--text-1);
 }
 /* Datos que el responsable debe completar: [NOMBRE DEL RESPONSABLE], etc. */
-.pendiente { background: rgba(255,179,64,0.18); color: var(--amber); border-radius: 4px; padding: 0 4px; font-weight: 800; }
+.pendiente { background: rgba(255,179,64,0.18); color: var(--amber); border-radius: 4px; padding: 0 4px; font-weight: 650; }
 
 .legal-pie {
   position: relative; z-index: 1;
   display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px;
   padding: 0 16px 40px; font-size: 13px;
 }
-.legal-pie a { color: var(--text-2); font-weight: 700; text-decoration: none; }
+.legal-pie a { color: var(--text-2); font-weight: 600; text-decoration: none; }
 .legal-pie a:hover { color: var(--mint); }
 .legal-pie a[aria-current="page"] { color: var(--mint); }
 

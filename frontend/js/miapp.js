@@ -109,7 +109,7 @@ let splashOculto = false;
 // Si el servidor tarda (en Render gratis puede estar "dormido"), explicamos por qué
 const avisoLento = setTimeout(() => {
   const t = document.getElementById('splash-texto');
-  if (t) t.textContent = window.t('Despertando el servidor… la primera visita del día puede tardar hasta un minuto ☕');
+  if (t) t.textContent = window.t('Despertando el servidor… la primera visita del día puede tardar hasta un minuto');
 }, 4500);
 function ocultarSplash() {
   if (splashOculto) return;
@@ -193,7 +193,7 @@ async function ejecutar(fn) {
   try {
     await fn();
   } catch (error) {
-    avisar('⚠️ ' + (error.message === 'Failed to fetch' ? t('Sin conexión con Mi Súper') : t(error.message)));
+    avisar((error.message === 'Failed to fetch' ? t('Sin conexión con Mi Súper') : t(error.message)));
   } finally {
     estado.ocupado = false;
   }
@@ -225,7 +225,7 @@ async function iniciar() {
   } catch (error) {
     ocultarSplash();
     $('#aviso').hidden = false;
-    $('#prod-grid').innerHTML = `<div class="vacio"><span class="vacio-ico">📡</span><p>${t('No pudimos cargar los productos.')}</p></div>`;
+    $('#prod-grid').innerHTML = `<div class="vacio"><span class="vacio-ico">${ico('cloud-off')}</span><p>${t('No pudimos cargar los productos.')}</p></div>`;
   }
 }
 
@@ -307,7 +307,7 @@ async function buscarProductos({ mas = false } = {}) {
   if (estado.categoria !== 'todas') params.set('categoria', estado.categoria);
   if (!todosLosSupers()) params.set('supermercado', slugsActivos().join(','));
   if (AJUSTES.orden === 'precio' || AJUSTES.orden === 'unidad') params.set('orden', AJUSTES.orden);
-  if (!mas) $('#prod-grid').innerHTML = `<div class="vacio" style="grid-column:1/-1"><span class="vacio-ico">🔎</span><p>${t('Buscando…')}</p></div>`;
+  if (!mas) $('#prod-grid').innerHTML = `<div class="vacio" style="grid-column:1/-1"><span class="vacio-ico">${ico('search')}</span><p>${t('Buscando…')}</p></div>`;
   try {
     const lista = await api('/api/productos?' + params);
     if (consulta !== consultaActual) return;
@@ -317,7 +317,7 @@ async function buscarProductos({ mas = false } = {}) {
     estado.hayMas = lista.length === POR_PAGINA;
     renderProductos();
   } catch {
-    if (consulta === consultaActual) avisar(t('⚠️ No pudimos buscar ahora. Probá de nuevo.'));
+    if (consulta === consultaActual) avisar(t('No pudimos buscar ahora. Probá de nuevo.'));
   }
 }
 
@@ -390,14 +390,14 @@ const aceptoTerminosHtml = () => `<label class="ver-pass acepto"><input type="ch
 function hojaBienvenida(productoPendiente = '') {
   abrirHoja(`
     <form data-form="crear" data-pendiente="${esc(productoPendiente)}">
-      <h2>${t('¡Bienvenido a Mi Súper! 👋')}</h2>
+      <h2>${t('¡Bienvenido a Mi Súper!')}</h2>
       <p>${t('Para empezar, decinos <b>cuánto querés gastar</b> en tu compra. Te avisamos en qué supermercado te alcanza mejor.')}</p>
       <label for="f-pres">${t('Tu presupuesto (C$)')}</label>
       <input class="campo" id="f-pres" name="presupuesto" inputmode="numeric" value="${AJUSTES.presupuesto}" required>
       ${atajosHtml()}
       <label for="f-nombre">${t('Nombre de la lista')}</label>
       <input class="campo" id="f-nombre" name="nombre" value="${esc(t('Compra de la semana'))}" maxlength="40" required>
-      <div class="hoja-acciones"><button class="btn-primary" type="submit">${t('Empezar 🛒')}</button></div>
+      <div class="hoja-acciones"><button class="btn-primary" type="submit">${t('Empezar')}</button></div>
       <p class="nota-cuenta">${t('¿Ya tenés cuenta?')} <button type="button" class="enlace" data-accion="cuenta" data-modo="entrar">${t('Entrá')}</button> ${t('y aparecen tus listas.')}</p>
     </form>`);
 }
@@ -496,7 +496,7 @@ function hojaOlvide(email = '') {
 function hojaCorreoEnviado(mensaje) {
   abrirHoja(`
     <div class="vacio" style="padding:10px 0 0">
-      <span class="vacio-ico">📬</span>
+      <span class="vacio-ico">${ico('inbox')}</span>
       <h2>${t('Revisá tu correo')}</h2>
       <p>${esc(t(mensaje))}</p>
     </div>
@@ -529,8 +529,8 @@ function hojaPerfil() {
     </div>
     <p>${t('✓ Tus listas se guardan en tu cuenta. Entrá con el mismo correo en otro celular o compu y las vas a ver ahí también.')}</p>
     <div class="menu-opciones">
-      <button class="btn-ghost" data-accion="ir-ajustes">⚙️ ${t('Ajustes de mi cuenta')}</button>
-      <button class="btn-ghost" data-accion="cerrar-sesion">🚪 ${t('Cerrar sesión')}</button>
+      <button class="btn-ghost" data-accion="ir-ajustes">${ico('settings')}${t('Ajustes de mi cuenta')}</button>
+      <button class="btn-ghost" data-accion="cerrar-sesion">${ico('log-out')}${t('Cerrar sesión')}</button>
       <button class="btn-ghost" data-accion="cerrar">${t('Cerrar')}</button>
     </div>`);
 }
@@ -584,7 +584,7 @@ function hojaEliminarCuenta() {
 function hojaReportar(producto = '') {
   abrirHoja(`
     <form data-form="reporte">
-      <h2>🚩 ${t('Reportar un precio incorrecto')}</h2>
+      <h2>${ico('flag')}${t('Reportar un precio incorrecto')}</h2>
       <p>${t('Si un precio no coincide con la tienda, avisanos y lo revisamos.')}</p>
       <label for="f-prod">${t('Producto')}</label>
       <input class="campo" id="f-prod" name="producto" value="${esc(producto)}" maxlength="200" placeholder="${esc(t('Ej: Leche Eskimo 1 L en Walmart'))}">
@@ -613,7 +613,7 @@ async function iniciarSesion(ruta, datos, saludo) {
   estado.gastos = null; // el historial cambia de dueño
   if (document.body.dataset.vista === 'gastos') cargarGastos();
   if (document.body.dataset.vista === 'ajustes') renderAjustes();
-  avisar(`${saludo || t('👋 ¡Hola, {nombre}!', { nombre: r.usuario.nombre.split(' ')[0] })}${extra}`);
+  avisar(`${saludo || t('¡Hola, {nombre}!', { nombre: r.usuario.nombre.split(' ')[0] })}${extra}`);
 }
 
 /* Sale de la cuenta en este dispositivo (las listas quedan guardadas en la cuenta) */
@@ -638,7 +638,7 @@ function renderCuenta() {
     btn.innerHTML = `<span class="avatar">${esc(nombre.charAt(0).toUpperCase())}</span><span class="cuenta-txt">${esc(nombre)}</span>`;
     btn.setAttribute('aria-label', t('Mi cuenta ({nombre})', { nombre: estado.usuario.nombre }));
   } else {
-    btn.innerHTML = `<span class="avatar vacio-av">👤</span><span class="cuenta-txt">${t('Entrar')}</span>`;
+    btn.innerHTML = `<span class="avatar vacio-av">${ico('user')}</span><span class="cuenta-txt">${t('Entrar')}</span>`;
     btn.setAttribute('aria-label', t('Entrar o crear cuenta (opcional)'));
   }
 }
@@ -648,14 +648,14 @@ function hojaOpciones() {
   abrirHoja(`
     <h2>${esc(estado.lista.nombre)}</h2>
     <div class="menu-opciones">
-      ${itemsValidos().length ? `<button class="btn-ghost" data-accion="compartir">📤 ${t('Compartir por WhatsApp')}</button>` : ''}
-      <button class="btn-ghost" data-accion="presupuesto">💰 ${t('Cambiar presupuesto')}</button>
-      <button class="btn-ghost" data-accion="renombrar">✏️ ${t('Cambiar nombre')}</button>
-      <button class="btn-ghost" data-accion="duplicar">🔁 ${t('Duplicar para reutilizarla')}</button>
-      ${itemsValidos().length ? `<button class="btn-ghost" data-accion="registrar-compra">✅ ${t('Terminé mi compra (guardar el gasto)')}</button>` : ''}
-      <button class="btn-ghost" data-accion="desmarcar">↩️ ${t('Desmarcar todo (empezar de nuevo)')}</button>
-      ${estado.instalar ? `<button class="btn-ghost" data-accion="instalar">📲 ${t('Instalar Mi Súper en este dispositivo')}</button>` : ''}
-      <button class="btn-ghost btn-peligro" data-accion="confirmar-eliminar">🗑️ ${t('Eliminar lista')}</button>
+      ${itemsValidos().length ? `<button class="btn-ghost" data-accion="compartir">${ico('share-2')}${t('Compartir por WhatsApp')}</button>` : ''}
+      <button class="btn-ghost" data-accion="presupuesto">${ico('wallet')}${t('Cambiar presupuesto')}</button>
+      <button class="btn-ghost" data-accion="renombrar">${ico('pencil')}${t('Cambiar nombre')}</button>
+      <button class="btn-ghost" data-accion="duplicar">${ico('copy')}${t('Duplicar para reutilizarla')}</button>
+      ${itemsValidos().length ? `<button class="btn-ghost" data-accion="registrar-compra">${ico('circle-check')}${t('Terminé mi compra (guardar el gasto)')}</button>` : ''}
+      <button class="btn-ghost" data-accion="desmarcar">${ico('rotate-ccw')}${t('Desmarcar todo (empezar de nuevo)')}</button>
+      ${estado.instalar ? `<button class="btn-ghost" data-accion="instalar">${ico('download')}${t('Instalar Mi Súper en este dispositivo')}</button>` : ''}
+      <button class="btn-ghost btn-peligro" data-accion="confirmar-eliminar">${ico('trash-2')}${t('Eliminar lista')}</button>
       <button class="btn-ghost" data-accion="cerrar">${t('Cerrar')}</button>
     </div>`);
 }
@@ -690,7 +690,7 @@ function textoParaCompartir() {
       const falta = s.completo ? '' : ` (${t('le faltan productos')})`;
       lineas.push(`• ${s.supermercado}: ${fmtC(s.total)}${falta}${marca}`);
     });
-    if (comp.mejorSupermercado) lineas.push('', t('👉 Más barato: {super}', { super: comp.mejorSupermercado }));
+    if (comp.mejorSupermercado) lineas.push('', '👉 ' + t('Más barato: {super}', { super: comp.mejorSupermercado }));
   }
   lineas.push('', t('Hecho con Mi Súper') + ' · ' + location.origin + location.pathname.replace(/app\.html$/, ''));
   return lineas.join('\n');
@@ -729,7 +729,7 @@ function renderTodo() {
 function renderChips() {
   const presentes = Object.keys(CATEGORIAS).filter(c => estado.resumen[c] || estado.productos.some(p => p.categoria === c));
   const chip = (valor, texto) => `<button class="chip ${estado.categoria === valor ? 'activa' : ''}" data-accion="categoria" data-valor="${valor}" role="tab">${texto}</button>`;
-  $('#chips').innerHTML = chip('todas', '✨ ' + t('Todos')) + presentes.map(c => chip(c, `${CATEGORIAS[c].emoji} ${nombreCategoria(c)}`)).join('');
+  $('#chips').innerHTML = chip('todas', ico('layout-grid') + t('Todos')) + presentes.map(c => chip(c, `${ico(CATEGORIAS[c].icono)}${nombreCategoria(c)}`)).join('');
 }
 
 function productosFiltrados() {
@@ -763,15 +763,14 @@ function celdasPrecio(p) {
   const mejor = mejorPrecio(p);
   return supersActivos().map(nombre => {
     const v = p.precios[nombre];
-    const s = SUPERS[nombre];
     if (v === undefined) {
-      return `<div class="precio-celda no-disp"><span class="pc-super">${s.emoji} ${nombre}</span><span class="pc-valor">—</span><span class="pc-extra">${t('No disponible')}</span></div>`;
+      return `<div class="precio-celda no-disp"><span class="pc-super">${puntoSuper(nombre)}${nombre}</span><span class="pc-valor">—</span><span class="pc-extra">${t('No disponible')}</span></div>`;
     }
     const esMejor = mejor && v === mejor.precio;
     const antes = p.antes && p.antes[nombre];
     const extra = esMejor ? t('✓ Mejor precio') : antes ? t('Antes {precio}', { precio: fmtC(antes) }) : '&nbsp;';
     return `<div class="precio-celda ${esMejor ? 'mejor' : ''} ${antes ? 'rebaja' : ''}">
-      <span class="pc-super">${s.emoji} ${nombre}</span>
+      <span class="pc-super">${puntoSuper(nombre)}${nombre}</span>
       <span class="pc-valor">${fmtC(v)}</span>
       ${p.tamano ? `<span class="pc-unidad">${textoPorUnidad(v, p.tamano)}</span>` : ''}
       <span class="pc-extra">${esMejor && antes ? t('✓ Mejor · antes {precio}', { precio: fmtC(antes) }) : extra}</span>
@@ -820,20 +819,20 @@ function renderOfertas() {
 
   // Filtros: supermercado y sección
   const chipSuper = (valor, texto) => `<button class="chip ${of.super === valor ? 'activa' : ''}" data-accion="of-super" data-valor="${valor}" role="tab">${texto}</button>`;
-  $('#ofertas-supers').innerHTML = chipSuper('todos', '✨ ' + t('Todos los súper')) +
-    supersActivos().map(n => chipSuper(SUPERS[n].slug, `${SUPERS[n].emoji} ${n}`)).join('');
+  $('#ofertas-supers').innerHTML = chipSuper('todos', ico('layout-grid') + t('Todos los súper')) +
+    supersActivos().map(n => chipSuper(SUPERS[n].slug, `${puntoSuper(n)}${n}`)).join('');
   const cats = Object.keys(CATEGORIAS).filter(c => of.categorias && of.categorias[c]);
   const chipCat = (valor, texto) => `<button class="chip ${of.categoria === valor ? 'activa' : ''}" data-accion="of-cat" data-valor="${valor}" role="tab">${texto}</button>`;
   $('#ofertas-cats').innerHTML = cats.length > 1
-    ? chipCat('todas', t('Todas las secciones')) + cats.map(c => chipCat(c, `${CATEGORIAS[c].emoji} ${nombreCategoria(c)} · ${of.categorias[c]}`)).join('')
+    ? chipCat('todas', t('Todas las secciones')) + cats.map(c => chipCat(c, `${ico(CATEGORIAS[c].icono)}${nombreCategoria(c)} · ${of.categorias[c]}`)).join('')
     : '';
 
   if (of.cargando || of.error || !of.datos || !of.datos.length) firmaOfertas = '';
   if (of.cargando) { grid.innerHTML = `<div class="cargando" style="grid-column:1/-1">${t('Cargando ofertas…')}</div>`; return; }
-  if (of.error) { grid.innerHTML = `<div class="vacio" style="grid-column:1/-1"><span class="vacio-ico">📡</span><p>${t('No pudimos cargar las ofertas.')}</p></div>`; return; }
+  if (of.error) { grid.innerHTML = `<div class="vacio" style="grid-column:1/-1"><span class="vacio-ico">${ico('cloud-off')}</span><p>${t('No pudimos cargar las ofertas.')}</p></div>`; return; }
   if (!of.datos) return;
   if (!of.datos.length) {
-    grid.innerHTML = `<div class="vacio" style="grid-column:1/-1"><span class="vacio-ico">🏷️</span><p>${t('No hay ofertas aquí en este momento.')}<br>${t('Probá con otro supermercado o sección.')}</p></div>`;
+    grid.innerHTML = `<div class="vacio" style="grid-column:1/-1"><span class="vacio-ico">${ico('tag')}</span><p>${t('No hay ofertas aquí en este momento.')}<br>${t('Probá con otro supermercado o sección.')}</p></div>`;
     return;
   }
 
@@ -854,15 +853,14 @@ function tarjetaOferta(p) {
     const o = p.oferta;
     const cant = cantidadEnLista(p.id);
     const cat = CATEGORIAS[p.categoria] || CATEGORIAS.otros;
-    const s = SUPERS[o.supermercado] || { emoji: '🏪' };
-    const accion = accionTarjeta(p, cant);
+        const accion = accionTarjeta(p, cant);
     const porUnidad = p.tamano ? `<span class="pc-unidad">${textoPorUnidad(o.precio, p.tamano)}</span>` : '';
     return `<article class="prod-card oferta-card ${cant ? 'en-lista' : ''} ${estado.recienAgregado === p.id ? 'recien' : ''}" data-id="${p.id}" data-cant="${cant}">
       <div class="prod-top">
-        <div class="prod-emoji" aria-hidden="true">${cat.emoji}</div>
+        <div class="prod-emoji" aria-hidden="true">${ico(cat.icono)}</div>
         <div class="prod-info" data-accion="historial" data-id="${p.id}" title="${esc(t('Ver cómo ha cambiado el precio'))}">
           <div class="prod-nombre">${esc(p.nombre)}</div>
-          <div class="prod-cat"><span class="oferta-super">${s.emoji} ${esc(o.supermercado)}</span> · ${nombreCategoria(p.categoria)}${cant ? ` · <span class="en-lista-txt">${t('✓ En tu lista')}</span>` : ''}</div>
+          <div class="prod-cat"><span class="oferta-super">${puntoSuper(o.supermercado)}${esc(o.supermercado)}</span> · ${nombreCategoria(p.categoria)}${cant ? ` · <span class="en-lista-txt">${t('✓ En tu lista')}</span>` : ''}</div>
         </div>
         <span class="oferta-tag" aria-label="${esc(t('{n}% de descuento', { n: o.descuento }))}">-${o.descuento}%</span>
       </div>
@@ -873,7 +871,7 @@ function tarjetaOferta(p) {
         <span class="oferta-ahorro">${t('Ahorrás {monto}', { monto: fmtC(Math.round((o.antes - o.precio) * 100) / 100) })}</span>
       </div>
       <div class="prod-top" style="margin-top:10px;justify-content:flex-end;gap:8px">
-        <button class="btn-historial" data-accion="historial" data-id="${p.id}" title="${esc(t('Ver cómo ha cambiado el precio'))}" aria-label="${esc(t('Ver cómo ha cambiado el precio de {nombre}', { nombre: p.nombre }))}">📈</button>
+        <button class="btn-historial" data-accion="historial" data-id="${p.id}" title="${esc(t('Ver cómo ha cambiado el precio'))}" aria-label="${esc(t('Ver cómo ha cambiado el precio de {nombre}', { nombre: p.nombre }))}">${ico('chart-line')}</button>
         <div class="prod-acc">${accion}</div>
       </div>
     </article>`;
@@ -884,7 +882,7 @@ function renderProductos() {
   if (!estado.productos.length) return;
   if (!lista.length) {
     const que = estado.busqueda.trim() ? `"${esc(estado.busqueda)}"` : t('productos en esta sección');
-    $('#prod-grid').innerHTML = `<div class="vacio" style="grid-column:1/-1"><span class="vacio-ico">🔎</span><p>${t('No encontramos {que}.', { que })}<br>${t('Probá con otra palabra.')}</p></div>`;
+    $('#prod-grid').innerHTML = `<div class="vacio" style="grid-column:1/-1"><span class="vacio-ico">${ico('search')}</span><p>${t('No encontramos {que}.', { que })}<br>${t('Probá con otra palabra.')}</p></div>`;
     firmaProductos = '';
     return;
   }
@@ -933,9 +931,9 @@ function tarjetaProducto(p, columnas) {
     const accion = accionTarjeta(p, cant);
     return `<article class="prod-card ${cant ? 'en-lista' : ''} ${estado.recienAgregado === p.id ? 'recien' : ''}" data-id="${p.id}" data-cant="${cant}">
       <div class="prod-top">
-        <div class="prod-emoji" aria-hidden="true">${cat.emoji}</div>
+        <div class="prod-emoji" aria-hidden="true">${ico(cat.icono)}</div>
         <div class="prod-info" data-accion="historial" data-id="${p.id}" title="${esc(t('Ver cómo ha cambiado el precio'))}"><div class="prod-nombre">${nombre}</div><div class="prod-cat">${nombreCategoria(p.categoria)}${cant ? ` · <span class="en-lista-txt">${t('✓ En tu lista')}</span>` : ''}</div></div>
-        <button class="btn-historial" data-accion="historial" data-id="${p.id}" title="${esc(t('Ver cómo ha cambiado el precio'))}" aria-label="${esc(t('Ver cómo ha cambiado el precio de {nombre}', { nombre: p.nombre }))}">📈</button>
+        <button class="btn-historial" data-accion="historial" data-id="${p.id}" title="${esc(t('Ver cómo ha cambiado el precio'))}" aria-label="${esc(t('Ver cómo ha cambiado el precio de {nombre}', { nombre: p.nombre }))}">${ico('chart-line')}</button>
         <div class="prod-acc">${accion}</div>
       </div>
       <div class="precios" style="${columnas}">${celdasPrecio(p)}</div>
@@ -958,14 +956,14 @@ function renderSelector() {
 function renderResumen() {
   const caja = $('#resumen');
   if (!estado.lista) {
-    caja.innerHTML = `<div class="tarjeta vacio"><span class="vacio-ico">📝</span>
+    caja.innerHTML = `<div class="tarjeta vacio"><span class="vacio-ico">${ico('clipboard-list')}</span>
       <p>${t('Todavía no tenés una lista.')}<br>${t('Creala y poné tu presupuesto.')}</p>
       <button class="btn-primary" data-accion="bienvenida">${t('Crear mi lista')}</button></div>`;
     return;
   }
   const pres = estado.lista.presupuesto;
   const comp = estado.comparacion;
-  const botonPres = `<button class="res-pres" data-accion="presupuesto" aria-label="${esc(t('Cambiar presupuesto'))}">${fmtC(pres)} <small>✏️</small></button>`;
+  const botonPres = `<button class="res-pres" data-accion="presupuesto" aria-label="${esc(t('Cambiar presupuesto'))}">${fmtC(pres)} <small>${ico('pencil')}</small></button>`;
 
   if (!itemsValidos().length || !comp) {
     caja.innerHTML = `<div class="res-tarjeta">
@@ -981,8 +979,8 @@ function renderResumen() {
   const pct = pres > 0 ? Math.min(100, (total / pres) * 100) : 100;
   const pasado = diferencia < 0;
   let donde;
-  if (mejor && comp.porSupermercado.length === 1) donde = t('Comprando todo en <b>{super}</b>', { super: `${SUPERS[mejor.supermercado]?.emoji || ''} ${mejor.supermercado}` });
-  else if (mejor) donde = t('Comprando todo en <b>{super}</b>, el más barato', { super: `${SUPERS[mejor.supermercado]?.emoji || ''} ${mejor.supermercado}` });
+  if (mejor && comp.porSupermercado.length === 1) donde = t('Comprando todo en <b>{super}</b>', { super: `${puntoSuper(mejor.supermercado)}${mejor.supermercado}` });
+  else if (mejor) donde = t('Comprando todo en <b>{super}</b>, el más barato', { super: `${puntoSuper(mejor.supermercado)}${mejor.supermercado}` });
   else donde = t('Combinando supermercados (ninguno tiene todos tus productos)');
   const ahorroExtra = mejor ? mejor.total - comp.combinado.total : 0;
 
@@ -992,7 +990,7 @@ function renderResumen() {
     <div class="res-donde">${donde}</div>
     <div class="barra-pres" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}"><div id="res-barra" class="${pasado ? 'pasado' : ''}" style="width:${estado.pctPrevio}%"></div></div>
     <div class="res-estado ${pasado ? 'mal' : 'ok'}">${pasado ? t('✗ Te pasás por {monto}', { monto: fmtC(-diferencia) }) : t('✓ Te sobran {monto}', { monto: fmtC(diferencia) })}</div>
-    ${ahorroExtra >= 1 ? `<p class="res-nota">${t('💡 Si combinás supermercados ahorrás {monto} más.', { monto: fmtC(ahorroExtra) })} <a href="#comparar" data-accion="ir" data-vista="comparar" style="color:var(--mint);font-weight:800">${t('Ver cómo')}</a></p>` : ''}
+    ${ahorroExtra >= 1 ? `<p class="res-nota">${t('Si combinás supermercados ahorrás {monto} más.', { monto: fmtC(ahorroExtra) })} <a href="#comparar" data-accion="ir" data-vista="comparar" style="color:var(--mint);font-weight:800">${t('Ver cómo')}</a></p>` : ''}
   </div>`;
   contarNumero($('#res-total'), estado.totalPrevio || total, total);
   dosCuadros(() => { const b = $('#res-barra'); if (b) b.style.width = pct + '%'; });
@@ -1007,7 +1005,7 @@ function sugerenciaHtml(id) {
   if (!s) return '';
   const medida = s.producto.tamano ? { kg: t('por kilo'), l: t('por litro'), u: t('por unidad') }[s.producto.tamano.unidad] : '';
   return `<div class="sugerencia">
-    <span class="sug-ico" aria-hidden="true">💡</span>
+    <span class="sug-ico">${ico('lightbulb')}</span>
     <div class="sug-texto">
       <span class="sug-titulo">${t('¿Hay algo más barato?')}</span>
       <span><b>${esc(s.producto.nombre)}</b> · ${fmtC(s.precio)} ${t('en {super}', { super: esc(s.supermercado) })}</span>
@@ -1027,7 +1025,7 @@ function renderItems() {
   btnTerminar.hidden = items.length === 0;
   if (!items.length) {
     estado.itemsPrevios = new Set();
-    caja.innerHTML = `<div class="vacio"><span class="vacio-ico">🛒</span><p>${t('Tu lista está vacía.')}<br>${t('Agregá productos desde el catálogo.')}</p>
+    caja.innerHTML = `<div class="vacio"><span class="vacio-ico">${ico('shopping-cart')}</span><p>${t('Tu lista está vacía.')}<br>${t('Agregá productos desde el catálogo.')}</p>
       <button class="btn-ghost solo-movil" data-accion="ir" data-vista="productos">${t('Ver productos')}</button></div>`;
     return;
   }
@@ -1045,7 +1043,7 @@ function renderItems() {
         : t('Sin precio hoy');
       const nuevo = previos && !previos.has(id) ? 'nuevo' : '';
       return `<div class="item ${item.comprado ? 'comprado' : ''} ${nuevo}">${item.comprado ? '' : sugerenciaHtml(id)}
-        <button class="check ${item.comprado ? 'on' : ''}" data-accion="comprado" data-id="${id}" aria-label="${esc(item.comprado ? t('Desmarcar') : t('Marcar como comprado'))}">${item.comprado ? '✓' : ''}</button>
+        <button class="check ${item.comprado ? 'on' : ''}" data-accion="comprado" data-id="${id}" aria-label="${esc(item.comprado ? t('Desmarcar') : t('Marcar como comprado'))}">${item.comprado ? ico('check') : ''}</button>
         <div class="item-info"><div class="item-nombre">${esc(item.producto.nombre)}</div><div class="item-precio">${detalle}</div></div>
         <div class="item-der">
           <div class="stepper">
@@ -1065,7 +1063,7 @@ function renderComparar() {
   const comp = estado.comparacion;
   if (!estado.lista || !comp || !itemsValidos().length) {
     $('#comparar-sub').textContent = t('El total de tu lista en cada supermercado.');
-    caja.innerHTML = `<div class="tarjeta vacio"><span class="vacio-ico">📊</span>
+    caja.innerHTML = `<div class="tarjeta vacio"><span class="vacio-ico">${ico('chart-column')}</span>
       <p>${t('Agregá productos a tu lista y acá vas a ver')}<br>${t('cuánto cuesta en cada supermercado.')}</p>
       <button class="btn-primary" data-accion="ir" data-vista="productos">${t('Agregar productos')}</button></div>`;
     return;
@@ -1077,7 +1075,7 @@ function renderComparar() {
 
   const ordenados = [...comp.porSupermercado].sort((a, b) => (b.completo - a.completo) || (a.total - b.total));
   const tarjetas = ordenados.map(s => {
-    const info = SUPERS[s.supermercado] || { emoji: '🏪', color: '#1db96a' };
+    const info = SUPERS[s.supermercado] || { color: '#1db96a' };
     const ganador = s.supermercado === comp.mejorSupermercado && comp.porSupermercado.length > 1;
     const pct = pres > 0 ? Math.min(100, (s.total / pres) * 100) : 100;
     const pasado = s.total > pres;
@@ -1086,9 +1084,9 @@ function renderComparar() {
     else estadoTxt = `<div class="cs-estado ${pasado ? 'mal' : 'ok'}">${pasado ? t('✗ Te pasás por {monto}', { monto: fmtC(s.total - pres) }) : t('✓ Te sobran {monto}', { monto: fmtC(pres - s.total) })}</div>`;
     return `<div class="comp-super ${ganador ? 'ganador' : ''}">
       <div class="cs-cabeza">
-        <div class="cs-logo" style="background:${info.color}22;color:${info.color}">${info.emoji}</div>
+        ${logoSuper(s.supermercado, 'cs-logo')}
         <div class="cs-nombre">${s.supermercado}</div>
-        ${ganador ? `<span class="cs-ganador">${t('🏆 Más barato')}</span>` : ''}
+        ${ganador ? `<span class="cs-ganador">${ico('trophy')}${t('Más barato')}</span>` : ''}
       </div>
       <div class="cs-total" style="color:${info.color}">${fmtC(s.total)}</div>
       ${estadoTxt}
@@ -1108,13 +1106,13 @@ function renderComparar() {
   const rutas = Object.entries(grupos).map(([superm, lineas]) => {
     const subtotal = lineas.reduce((a, l) => a + l.subtotal, 0);
     return `<div class="ruta-super">
-      <h3><span>${SUPERS[superm]?.emoji || '❔'} ${esc(superm)}</span><span>${fmtC(subtotal)}</span></h3>
+      <h3><span>${puntoSuper(superm)}${esc(superm)}</span><span>${fmtC(subtotal)}</span></h3>
       ${lineas.map(l => `<div class="ruta-item"><span>${esc(l.producto)} × ${l.cantidad}</span><span>${l.precio ? fmtC(l.subtotal) : '—'}</span></div>`).join('')}
     </div>`;
   }).join('');
   const combinado = comp.porSupermercado.length > 1 ? `
     <div class="combinado">
-      <h2>${t('🧭 Plan para gastar lo mínimo: {monto}', { monto: fmtC(comp.combinado.total) })}</h2>
+      <h2>${ico('route')}${t('Plan para gastar lo mínimo: {monto}', { monto: fmtC(comp.combinado.total) })}</h2>
       <p class="sub">${t('Comprando cada producto donde está más barato')}${ahorro >= 1 ? ' ' + t('ahorrás <b style="color:var(--mint)">{monto}</b> frente a {super}', { monto: fmtC(ahorro), super: comp.mejorSupermercado }) : ''}. ${t('Vale la pena si te queda cerca ir a más de un súper.')}</p>
       ${rutas}
     </div>` : '';
@@ -1123,7 +1121,7 @@ function renderComparar() {
     <div class="comp-lista">${tarjetas}</div>
     ${combinado}
     <p class="aviso-precios"><b>${t('Precios referenciales. El precio válido es el de la tienda.')}</b><br>${t('Mi Súper no está afiliada a La Colonia, La Unión ni Walmart.')}</p>
-    <p style="text-align:center;margin-top:10px"><button class="btn-ghost" data-accion="compartir">📤 ${t('Compartir por WhatsApp')}</button></p>`;
+    <p style="text-align:center;margin-top:10px"><button class="btn-ghost" data-accion="compartir">${ico('share-2')}${t('Compartir por WhatsApp')}</button></p>`;
   dosCuadros(() => caja.querySelectorAll('[data-pct]').forEach(b => { b.style.width = b.dataset.pct + '%'; }));
 }
 
@@ -1148,21 +1146,21 @@ function renderAjustes() {
   const u = estado.usuario;
 
   const apariencia = `<div class="aj-grupo">
-    <h2>🌐 ${t('Apariencia')}</h2>
+    <h2>${ico('palette')}${t('Apariencia')}</h2>
     ${fila(t('Idioma'), t('Los nombres de los productos siguen en español, como vienen de las tiendas.'),
       segmento('aj-idioma', AJUSTES.idioma, [['es', 'Español'], ['en', 'English']], t('Idioma')))}
     ${fila(t('Tema'), t('Automático usa el mismo modo que tu celular.'),
-      segmento('aj-tema', tema, [['light', '☀️ ' + t('Claro')], ['dark', '🌙 ' + t('Oscuro')], ['auto', '📱 ' + t('Automático')]], t('Tema')))}
+      segmento('aj-tema', tema, [['light', ico('sun') + t('Claro')], ['dark', ico('moon') + t('Oscuro')], ['auto', ico('smartphone') + t('Automático')]], t('Tema')))}
     ${fila(t('Tamaño de letra'), '', segmento('aj-letra', AJUSTES.letra, [['normal', t('Normal')], ['grande', t('Grande')]], t('Tamaño de letra')))}
     ${fila(t('Efecto Liquid Glass'), t('Superficies de vidrio con reflejos. Desactivalo si tu celular va lento.'),
-      segmento('aj-vidrio', AJUSTES.vidrio === 'no' ? 'no' : 'si', [['si', '✨ ' + t('Activado')], ['no', t('Desactivado')]], t('Efecto Liquid Glass')))}
+      segmento('aj-vidrio', AJUSTES.vidrio === 'no' ? 'no' : 'si', [['si', ico('sparkles') + t('Activado')], ['no', t('Desactivado')]], t('Efecto Liquid Glass')))}
   </div>`;
 
   const compras = `<div class="aj-grupo">
-    <h2>🛒 ${t('Mis compras')}</h2>
+    <h2>${ico('shopping-cart')}${t('Mis compras')}</h2>
     <div class="aj-fila"><div class="aj-texto"><div class="aj-titulo">${t('Mis supermercados')}</div>
       <div class="aj-nota">${t('Elegí los que te quedan cerca. Solo esos se comparan y se recomiendan.')}</div></div>
-      <div class="aj-supers">${ORDEN_SUPERS.map(n => `<label class="aj-super"><input type="checkbox" data-aj-super="${esc(n)}" ${supersActivos().includes(n) ? 'checked' : ''}> ${SUPERS[n].emoji} ${n}</label>`).join('')}</div>
+      <div class="aj-supers">${ORDEN_SUPERS.map(n => `<label class="aj-super"><input type="checkbox" data-aj-super="${esc(n)}" ${supersActivos().includes(n) ? 'checked' : ''}> ${puntoSuper(n)}${n}</label>`).join('')}</div>
     </div>
     ${fila(t('Presupuesto inicial'), t('El monto que se pone solo al crear una lista nueva.'),
       `<form data-form="aj-presupuesto" style="display:flex;gap:8px;align-items:center"><input class="campo" name="presupuesto" inputmode="numeric" value="${AJUSTES.presupuesto}" aria-label="${esc(t('Presupuesto inicial'))}"><button class="btn-ghost" type="submit">${t('Guardar')}</button></form>`)}
@@ -1170,36 +1168,36 @@ function renderAjustes() {
   </div>`;
 
   const compartir = `<div class="aj-grupo">
-    <h2>📤 ${t('Compartir')}</h2>
+    <h2>${ico('share-2')}${t('Compartir')}</h2>
     ${fila(t('Compartir lista por WhatsApp'),
       estado.lista ? t('Manda "{nombre}" con los precios y el súper más barato.', { nombre: esc(estado.lista.nombre) }) : t('Primero creá una lista.'),
-      `<button class="btn-ghost" data-accion="compartir" ${estado.lista && itemsValidos().length ? '' : 'disabled'}>📤 ${t('Compartir')}</button>`)}
+      `<button class="btn-ghost" data-accion="compartir" ${estado.lista && itemsValidos().length ? '' : 'disabled'}>${ico('share-2')}${t('Compartir')}</button>`)}
   </div>`;
 
   const cuenta = u ? `<div class="aj-grupo">
-    <h2>👤 ${t('Cuenta')}</h2>
-    ${fila(esc(u.nombre), esc(u.email), `<button class="btn-ghost" data-accion="aj-nombre">✏️ ${t('Cambiar nombre')}</button>`)}
-    ${fila(t('Contraseña'), '', `<button class="btn-ghost" data-accion="aj-clave">🔑 ${t('Cambiar contraseña')}</button>`)}
-    ${fila(t('Cerrar sesión'), t('Tus listas quedan guardadas en tu cuenta.'), `<button class="btn-ghost" data-accion="cerrar-sesion">🚪 ${t('Cerrar sesión')}</button>`)}
-    ${fila(t('Eliminar mi cuenta'), t('Borra tu cuenta, tus listas y tu historial de gastos.'), `<button class="btn-ghost btn-peligro-txt" data-accion="aj-eliminar-cuenta">🗑️ ${t('Eliminar')}</button>`)}
+    <h2>${ico('user')}${t('Cuenta')}</h2>
+    ${fila(esc(u.nombre), esc(u.email), `<button class="btn-ghost" data-accion="aj-nombre">${ico('pencil')}${t('Cambiar nombre')}</button>`)}
+    ${fila(t('Contraseña'), '', `<button class="btn-ghost" data-accion="aj-clave">${ico('key-round')}${t('Cambiar contraseña')}</button>`)}
+    ${fila(t('Cerrar sesión'), t('Tus listas quedan guardadas en tu cuenta.'), `<button class="btn-ghost" data-accion="cerrar-sesion">${ico('log-out')}${t('Cerrar sesión')}</button>`)}
+    ${fila(t('Eliminar mi cuenta'), t('Borra tu cuenta, tus listas y tu historial de gastos.'), `<button class="btn-ghost btn-peligro-txt" data-accion="aj-eliminar-cuenta">${ico('trash-2')}${t('Eliminar')}</button>`)}
   </div>` : `<div class="aj-grupo">
-    <h2>👤 ${t('Cuenta')}</h2>
+    <h2>${ico('user')}${t('Cuenta')}</h2>
     ${fila(t('Usás Mi Súper sin cuenta'), t('Con una cuenta (opcional) ves tus listas en todos tus dispositivos.'), `<button class="btn-ghost" data-accion="cuenta" data-modo="entrar">${t('Entrar o crear cuenta')}</button>`)}
   </div>`;
 
   const acerca = `<div class="aj-grupo">
-    <h2>ℹ️ ${t('Acerca de')}</h2>
+    <h2>${ico('info')}${t('Acerca de')}</h2>
     <div class="aj-info">
       <b>${t('Productos')}:</b> ${(info.productos || 0).toLocaleString(LOCALE())} · <b>${t('Versión')}:</b> ${VERSION_APP}<br>
       ${t('Los precios se toman de las tiendas en línea y pueden variar en sucursal.')}<br>
       ${t('Mi Súper no está afiliada a La Colonia, La Unión ni Walmart.')}
     </div>
-    ${fila(t('¿Viste un precio incorrecto?'), t('Avisanos y lo revisamos.'), `<button class="btn-ghost" data-accion="reportar">🚩 ${t('Reportar')}</button>`)}
-    <p class="aj-legal"><a href="terminos.html">📄 ${t('Términos de uso')}</a><a href="privacidad.html">🔒 ${t('Política de privacidad')}</a></p>
+    ${fila(t('¿Viste un precio incorrecto?'), t('Avisanos y lo revisamos.'), `<button class="btn-ghost" data-accion="reportar">${ico('flag')}${t('Reportar')}</button>`)}
+    <p class="aj-legal"><a href="terminos.html">${ico('file-text')}${t('Términos de uso')}</a><a href="privacidad.html">${ico('lock')}${t('Política de privacidad')}</a></p>
   </div>`;
 
   const accesibilidad = `<div class="aj-grupo">
-    <h2>♿ ${t('Accesibilidad')}</h2>
+    <h2>${ico('accessibility')}${t('Accesibilidad')}</h2>
     ${fila(t('Animaciones'), t('Reducidas quita los movimientos, transiciones y difuminados de la app.'),
       segmento('aj-movimiento', document.documentElement.getAttribute('data-movimiento') === 'reducido' ? 'reducido' : 'todas', [['todas', t('Todas')], ['reducido', t('Reducidas')]], t('Animaciones')))}
   </div>`;
@@ -1305,11 +1303,11 @@ function hojaRegistrarCompra() {
   const primera = opciones[0];
   abrirHoja(`
     <form data-form="compra">
-      <h2>${t('✅ Terminé mi compra')}</h2>
+      <h2>${ico('circle-check')}${t('Terminé mi compra')}</h2>
       <p>${t('Guardamos cuánto gastaste en "{nombre}" para tu historial de gastos por mes.', { nombre: esc(estado.lista.nombre) })}</p>
       <label for="f-super">${t('¿Dónde compraste?')}</label>
       <select class="campo" id="f-super" name="supermercado" data-cambia-super>
-        ${opciones.map(o => `<option value="${esc(o.valor)}" data-total="${o.total ?? ''}">${SUPERS[o.valor]?.emoji || '🧭'} ${esc(o.texto || o.valor)}${o.total ? ` · ${t('aprox.')} ${fmtC(o.total)}` : ''}</option>`).join('')}
+        ${opciones.map(o => `<option value="${esc(o.valor)}" data-total="${o.total ?? ''}">${esc(o.texto || o.valor)}${o.total ? ` · ${t('aprox.')} ${fmtC(o.total)}` : ''}</option>`).join('')}
       </select>
       <label for="f-total">${t('¿Cuánto pagaste? (C$)')}</label>
       <input class="campo" id="f-total" name="total" inputmode="decimal" value="${primera.total ?? ''}" required>
@@ -1367,8 +1365,8 @@ async function registrarCompra(datos) {
   }
   const ahorro = ahorroDeCompra(datos.supermercado);
   avisar(ahorro && ahorro.ahorro >= 1
-    ? t('📅 Gasto guardado. 💚 Ahorraste {monto} frente a {super}.', { monto: fmtC(ahorro.ahorro), super: ahorro.comparadoCon })
-    : t('📅 Gasto de {monto} guardado. Miralo en "Gastos".', { monto: fmtC(total) }));
+    ? t('Gasto guardado. Ahorraste {monto} frente a {super}.', { monto: fmtC(ahorro.ahorro), super: ahorro.comparadoCon })
+    : t('Gasto de {monto} guardado. Miralo en "Gastos".', { monto: fmtC(total) }));
 }
 
 function hojaBorrarCompra(id) {
@@ -1392,7 +1390,7 @@ async function cargarGastos() {
       estado.gastos = await api('/api/compras');
       renderGastos();
     } catch {
-      $('#gastos-cuerpo').innerHTML = `<div class="tarjeta vacio"><span class="vacio-ico">📡</span>
+      $('#gastos-cuerpo').innerHTML = `<div class="tarjeta vacio"><span class="vacio-ico">${ico('cloud-off')}</span>
         <p>${t('No pudimos cargar tu historial.')}</p><button class="btn-ghost" data-accion="ir" data-vista="gastos">${t('Reintentar')}</button></div>`;
     } finally {
       cargandoGastos = null;
@@ -1405,8 +1403,8 @@ function renderGastos() {
   const caja = $('#gastos-cuerpo');
   const g = estado.gastos;
   if (!g || !g.compras.length) {
-    caja.innerHTML = `<div class="tarjeta vacio"><span class="vacio-ico">📅</span>
-      <p>${t('Todavía no guardaste ninguna compra.')}<br>${t('Cuando termines de comprar, tocá <b>"✅ Terminé mi compra"</b> en tu lista y acá vas a ver cuánto gastás cada mes.')}</p>
+    caja.innerHTML = `<div class="tarjeta vacio"><span class="vacio-ico">${ico('calendar')}</span>
+      <p>${t('Todavía no guardaste ninguna compra.')}<br>${t('Cuando termines de comprar, tocá <b>"Terminé mi compra"</b> en tu lista y acá vas a ver cuánto gastás cada mes.')}</p>
       <button class="btn-primary" data-accion="ir" data-vista="lista">${t('Ir a mi lista')}</button></div>`;
     return;
   }
@@ -1454,7 +1452,7 @@ function renderGastos() {
         <span class="tile-nota">${comprasMes === 1 ? t('1 compra') : t('{n} compras', { n: comprasMes })}${comparacionTxt ? ' · ' + comparacionTxt : ''}</span></div>
       <div class="tile"><span class="tile-etq">${mesPasado}</span><span class="tile-valor">${porMes.has(pasado) ? fmtC(totalDe(pasado)) : '—'}</span>
         <span class="tile-nota">${t('Mes pasado')}</span></div>
-      <div class="tile"><span class="tile-etq">${t('💚 Ahorraste este mes')}</span>${ahorroTile}</div>
+      <div class="tile"><span class="tile-etq">${t('Ahorraste este mes')}</span>${ahorroTile}</div>
     </div>`;
 
   // Gráfica: los últimos 6 meses (con la línea del promedio)
@@ -1481,9 +1479,9 @@ function renderGastos() {
         return `<div class="gasto-fila">
           <div class="gf-info">
             <div class="gf-nombre">${esc(c.nombre)}</div>
-            <div class="gf-detalle">${FMT_DIA.format(new Date(c.fecha))} · ${s ? s.emoji + ' ' : '🧭 '}${esc(c.supermercado === 'Varios' ? t('Varios supermercados') : c.supermercado)}${c.cantidadProductos ? ` · ${t('{n} productos', { n: c.cantidadProductos })}` : ''}</div>
+            <div class="gf-detalle">${FMT_DIA.format(new Date(c.fecha))} · ${s ? puntoSuper(c.supermercado) : ico('route')}${esc(c.supermercado === 'Varios' ? t('Varios supermercados') : c.supermercado)}${c.cantidadProductos ? ` · ${t('{n} productos', { n: c.cantidadProductos })}` : ''}</div>
             ${pres ? `<div class="gf-detalle">${pres}</div>` : ''}
-            ${c.ahorro >= 1 ? `<div class="gf-detalle"><span class="ok">${t('💚 Ahorraste {monto} frente a {super}', { monto: fmtC(c.ahorro), super: esc(c.comparadoCon || t('el súper más caro')) })}</span></div>` : ''}
+            ${c.ahorro >= 1 ? `<div class="gf-detalle"><span class="ok">${t('Ahorraste {monto} frente a {super}', { monto: fmtC(c.ahorro), super: esc(c.comparadoCon || t('el súper más caro')) })}</span></div>` : ''}
           </div>
           <div class="gf-der">
             <span class="gf-total">${fmtC(c.total)}</span>
@@ -1532,7 +1530,7 @@ function graficaMeses(meses, totalDe, promedio, actual, ahorroDe = () => 0) {
     const x = izq + banda * i + (banda - anchoBarra) / 2;
     const enCurso = k === actual;
     const ahorroMes = ahorroDe(k);
-    const tip = `<b>${nombreMes(k)}</b><br>${v ? fmtC(v) : t('Sin compras guardadas')}${ahorroMes >= 1 ? `<br>${t('💚 Ahorraste {monto}', { monto: fmtC(ahorroMes) })}` : ''}${enCurso && v ? `<br><small>${t('Mes en curso')}</small>` : ''}`;
+    const tip = `<b>${nombreMes(k)}</b><br>${v ? fmtC(v) : t('Sin compras guardadas')}${ahorroMes >= 1 ? `<br>${t('Ahorraste {monto}', { monto: fmtC(ahorroMes) })}` : ''}${enCurso && v ? `<br><small>${t('Mes en curso')}</small>` : ''}`;
     return `<g data-tip="${esc(tip)}">
       <rect x="${izq + banda * i}" y="${arriba}" width="${banda}" height="${altoUtil}" fill="transparent"/>
       ${v > 0 ? `<path d="${barraRedondeada(x, y(v), anchoBarra, y(0) - y(v))}" class="g-barra ${enCurso ? 'en-curso' : ''}"/>` : ''}
@@ -1561,7 +1559,7 @@ async function hojaHistorialPrecio(id) {
   const chips = Object.entries(RANGOS).map(([k, r]) =>
     `<button type="button" class="chip ${k === historialPrecio.rango ? 'activa' : ''}" data-accion="rango" data-valor="${k}" role="tab">${r.texto}</button>`).join('');
   abrirHoja(`
-    <h2>📈 ${esc(p.nombre)}</h2>
+    <h2>${ico('chart-line')}${esc(p.nombre)}</h2>
     <p class="hist-sub">${t('Cómo ha cambiado el precio en cada supermercado.')}</p>
     <div id="hist-resumen"></div>
     <div class="chips hist-rangos" role="tablist" aria-label="${esc(t('Periodo'))}">${chips}</div>
@@ -1570,7 +1568,7 @@ async function hojaHistorialPrecio(id) {
     <div id="hist-tabla"></div>
     <p class="aviso-precios">${t('Precios referenciales. El precio válido es el de la tienda.')}</p>
     <div class="hoja-acciones">
-      <button class="btn-ghost" type="button" data-accion="reportar" data-producto="${esc(p.nombre)}">🚩 ${t('Reportar precio')}</button>
+      <button class="btn-ghost" type="button" data-accion="reportar" data-producto="${esc(p.nombre)}">${ico('flag')}${t('Reportar precio')}</button>
       <button class="btn-ghost" type="button" data-accion="cerrar">${t('Cerrar')}</button>
     </div>`);
   try {
@@ -1581,7 +1579,7 @@ async function hojaHistorialPrecio(id) {
     dibujarHistorial(historialPrecio.rango);
   } catch {
     const caja = $('#hist-grafica');
-    if (caja && historialPrecio.id === id) caja.innerHTML = `<div class="vacio"><span class="vacio-ico">📡</span><p>${t('No pudimos cargar el historial.')}</p></div>`;
+    if (caja && historialPrecio.id === id) caja.innerHTML = `<div class="vacio"><span class="vacio-ico">${ico('cloud-off')}</span><p>${t('No pudimos cargar el historial.')}</p></div>`;
   }
 }
 
@@ -1617,12 +1615,12 @@ function resumenHistorial(datos, prod) {
   const periodo = dias >= 28 ? t('del último mes') : t('de los últimos {n} días', { n: dias });
   const datosFrase = { monto: fmtC(Math.abs(dif)), periodo, promedio: fmtC(promedio), super: hoy.super };
 
-  let clase = 'igual', icono = '➖', frase = t('Hoy está en su precio de siempre (promedio {periodo}: {promedio}).', datosFrase);
+  let clase = 'igual', icono = ico('minus'), frase = t('Hoy está en su precio de siempre (promedio {periodo}: {promedio}).', datosFrase);
   if (Math.abs(dif) >= Math.max(1, promedio * 0.01)) {
-    if (dif < 0) { clase = 'baja'; icono = '💚'; frase = t('Hoy está {monto} más barato que su promedio {periodo} ({promedio}).', datosFrase); }
-    else { clase = 'sube'; icono = '🔺'; frase = t('Hoy está {monto} más caro que su promedio {periodo} ({promedio}).', datosFrase); }
+    if (dif < 0) { clase = 'baja'; icono = ico('trending-down'); frase = t('Hoy está {monto} más barato que su promedio {periodo} ({promedio}).', datosFrase); }
+    else { clase = 'sube'; icono = ico('trending-up'); frase = t('Hoy está {monto} más caro que su promedio {periodo} ({promedio}).', datosFrase); }
   }
-  return `<p class="hist-resumen ${clase}"><span aria-hidden="true">${icono}</span> <span>${frase} <b>${t('Mejor precio hoy: {super}.', datosFrase)}</b></span></p>`;
+  return `<p class="hist-resumen ${clase}"><span class="hist-ico">${icono}</span><span>${frase} <b>${t('Mejor precio hoy: {super}.', datosFrase)}</b></span></p>`;
 }
 
 // Precio de una serie en el momento t (el último cambio antes de t)
@@ -1647,7 +1645,7 @@ function dibujarHistorial(rango) {
     .map(h => ({ s: h.supermercado, v: h.valor, t: new Date(h.fecha).getTime() }))
     .sort((a, b) => a.t - b.t);
   if (!registros.length) {
-    caja.innerHTML = `<div class="vacio"><span class="vacio-ico">🕒</span><p>${t('Todavía no hay historial de este producto.')}<br>${t('Revisamos los precios todos los días: volvé en unos días.')}</p></div>`;
+    caja.innerHTML = `<div class="vacio"><span class="vacio-ico">${ico('clock')}</span><p>${t('Todavía no hay historial de este producto.')}<br>${t('Revisamos los precios todos los días: volvé en unos días.')}</p></div>`;
     $('#hist-leyenda').innerHTML = '';
     $('#hist-tabla').innerHTML = '';
     return;
@@ -1735,7 +1733,7 @@ function dibujarHistorial(rango) {
   // Con menos de 2 días de datos la gráfica saldría casi vacía: mejor lo explicamos
   if (t1 - primero < 2 * 864e5) {
     caja.onpointermove = caja.onpointerdown = caja.onpointerleave = null;
-    caja.innerHTML = `<div class="vacio hist-poco"><span class="vacio-ico">🕒</span>
+    caja.innerHTML = `<div class="vacio hist-poco"><span class="vacio-ico">${ico('clock')}</span>
       <p>${t('Empezamos a guardar este precio el {fecha}.', { fecha: FMT_DIA.format(new Date(primero)) })}<br>${t('En unos días vas a ver aquí cómo sube o baja.')}</p></div>`;
   }
 
@@ -1749,7 +1747,7 @@ function dibujarHistorial(rango) {
     const agotado = s.hoy === undefined ? ` <span class="ley-cambio">${t('· no disponible hoy')}</span>` : '';
     return `<div class="ley-fila">
       <i class="ley-color" style="background:var(--serie-${SUPERS[s.nombre].slug})"></i>
-      <span class="ley-nombre">${SUPERS[s.nombre].emoji} ${esc(s.nombre)}</span>
+      <span class="ley-nombre">${esc(s.nombre)}</span>
       <span class="ley-precio">${fmtC(s.fin)}</span>
       <span class="ley-detalle">${cambio}${agotado}</span>
     </div>`;
@@ -1799,7 +1797,7 @@ const acciones = {
     const nuevo = estado.porId.get(el.dataset.nuevo);
     const lista = await api(`/api/listas/${estado.lista._id}/items/${el.dataset.id}/cambiar`, { method: 'POST', body: { productoId: el.dataset.nuevo } });
     await trasCambio(lista);
-    avisar(t('🔄 Cambiado por {nombre}', { nombre: nuevo ? nuevo.nombre : t('Producto') }));
+    avisar(t('Cambiado por {nombre}', { nombre: nuevo ? nuevo.nombre : t('Producto') }));
   }),
   mas: el => ejecutar(() => cambiarCantidad(el.dataset.id, +1)),
   menos: el => ejecutar(() => cambiarCantidad(el.dataset.id, -1)),
@@ -1819,7 +1817,7 @@ const acciones = {
     cerrarHoja();
     estado.gastos = null;
     await cargarGastos();
-    avisar(t('🗑️ Compra borrada del historial'));
+    avisar(t('Compra borrada del historial'));
   }),
   historial: el => hojaHistorialPrecio(el.dataset.id),
   rango: el => dibujarHistorial(el.dataset.valor),
@@ -1874,19 +1872,19 @@ const acciones = {
     estado.listas.unshift(copia);
     cerrarHoja();
     await abrirLista(copia._id);
-    avisar(t('🔁 Lista duplicada'));
+    avisar(t('Lista duplicada'));
   }),
   desmarcar: () => ejecutar(async () => {
     const lista = await api(`/api/listas/${estado.lista._id}`, { method: 'PUT', body: { desmarcarTodo: true } });
     cerrarHoja();
     await trasCambio(lista);
-    avisar(t('↩️ Todo desmarcado'));
+    avisar(t('Todo desmarcado'));
   }),
   eliminar: () => ejecutar(async () => {
     await api(`/api/listas/${estado.lista._id}`, { method: 'DELETE' });
     cerrarHoja();
     await cargarListas();
-    avisar(t('🗑️ Lista eliminada'));
+    avisar(t('Lista eliminada'));
   }),
   instalar: async () => {
     cerrarHoja();
@@ -1925,7 +1923,7 @@ document.addEventListener('submit', e => {
   }
   if (tipo === 'restablecer') {
     if (datos.password !== datos.password2) return avisar(t('Las dos contraseñas no son iguales'));
-    return ejecutar(() => iniciarSesion('/api/auth/restablecer', { token: form.dataset.token, password: datos.password }, t('🔑 ¡Listo! Tu contraseña cambió.')));
+    return ejecutar(() => iniciarSesion('/api/auth/restablecer', { token: form.dataset.token, password: datos.password }, t('¡Listo! Tu contraseña cambió.')));
   }
   if (tipo === 'compra') return ejecutar(() => registrarCompra(datos, form));
   if (tipo === 'nombre-cuenta') {
@@ -1942,7 +1940,7 @@ document.addEventListener('submit', e => {
     return ejecutar(async () => {
       await api('/api/auth/password', { method: 'PUT', body: { actual: datos.actual, nueva: datos.nueva } });
       cerrarHoja();
-      avisar(t('🔑 ¡Listo! Tu contraseña cambió.'));
+      avisar(t('¡Listo! Tu contraseña cambió.'));
     });
   }
   if (tipo === 'eliminar-cuenta') {
@@ -1963,7 +1961,7 @@ document.addEventListener('submit', e => {
     if (!(monto > 0)) return avisar(t('Escribí un presupuesto mayor que cero'));
     guardarAjustes({ presupuesto: monto });
     renderAjustes();
-    return avisar(t('💰 Presupuesto inicial: {monto}', { monto: fmtC(monto) }));
+    return avisar(t('Presupuesto inicial: {monto}', { monto: fmtC(monto) }));
   }
 
   if (datos.presupuesto !== undefined) {
@@ -1976,12 +1974,12 @@ document.addEventListener('submit', e => {
       const pendiente = form.dataset.pendiente;
       cerrarHoja();
       await crearLista(datos.nombre.trim(), datos.presupuesto, pendiente);
-      if (!pendiente) avisar(t('📝 Lista creada'));
+      if (!pendiente) avisar(t('Lista creada'));
     } else if (tipo === 'presupuesto') {
       const lista = await api(`/api/listas/${estado.lista._id}`, { method: 'PUT', body: { presupuesto: datos.presupuesto } });
       cerrarHoja();
       await trasCambio(lista);
-      avisar(t('💰 Presupuesto actualizado'));
+      avisar(t('Presupuesto actualizado'));
     } else if (tipo === 'renombrar') {
       const lista = await api(`/api/listas/${estado.lista._id}`, { method: 'PUT', body: { nombre: datos.nombre.trim() } });
       cerrarHoja();

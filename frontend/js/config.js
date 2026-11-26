@@ -100,30 +100,40 @@ function fechaAmigable(iso) {
 }
 
 const CATEGORIAS = {
-  lacteos:          { nombre: 'Lácteos y huevos', emoji: '🥛' },
-  granos:           { nombre: 'Granos básicos',   emoji: '🌾' },
-  abarrotes:        { nombre: 'Abarrotes',        emoji: '🥫' },
-  limpieza:         { nombre: 'Limpieza',         emoji: '🧹' },
-  higiene:          { nombre: 'Higiene',          emoji: '🧴' },
-  carnes:           { nombre: 'Carnes',           emoji: '🥩' },
-  bebidas:          { nombre: 'Bebidas',          emoji: '🥤' },
-  'frutas-verduras':{ nombre: 'Frutas y verduras',emoji: '🥦' },
-  panaderia:        { nombre: 'Panadería',        emoji: '🍞' },
-  congelados:       { nombre: 'Congelados',       emoji: '🧊' },
-  licores:          { nombre: 'Cervezas y licores', emoji: '🍺' },
-  bebes:            { nombre: 'Bebés',            emoji: '🍼' },
-  mascotas:         { nombre: 'Mascotas',         emoji: '🐾' },
-  farmacia:         { nombre: 'Farmacia',         emoji: '💊' },
-  hogar:            { nombre: 'Hogar y desechables', emoji: '🍽️' },
-  otros:            { nombre: 'Otros',            emoji: '📦' }
+  lacteos:          { nombre: 'Lácteos y huevos', icono: 'milk' },
+  granos:           { nombre: 'Granos básicos',   icono: 'wheat' },
+  abarrotes:        { nombre: 'Abarrotes',        icono: 'soup' },
+  limpieza:         { nombre: 'Limpieza',         icono: 'spray-can' },
+  higiene:          { nombre: 'Higiene',          icono: 'droplets' },
+  carnes:           { nombre: 'Carnes',           icono: 'beef' },
+  bebidas:          { nombre: 'Bebidas',          icono: 'cup-soda' },
+  'frutas-verduras':{ nombre: 'Frutas y verduras',icono: 'carrot' },
+  panaderia:        { nombre: 'Panadería',        icono: 'croissant' },
+  congelados:       { nombre: 'Congelados',       icono: 'snowflake' },
+  licores:          { nombre: 'Cervezas y licores', icono: 'beer' },
+  bebes:            { nombre: 'Bebés',            icono: 'baby' },
+  mascotas:         { nombre: 'Mascotas',         icono: 'paw-print' },
+  farmacia:         { nombre: 'Farmacia',         icono: 'pill' },
+  hogar:            { nombre: 'Hogar y desechables', icono: 'utensils' },
+  otros:            { nombre: 'Otros',            icono: 'package' }
 };
 
-/* Colores y emoji de cada supermercado (por nombre, como los devuelve la API) */
+/* Color e iniciales de cada supermercado (por nombre, como los devuelve la API) */
 const SUPERS = {
-  'La Colonia': { emoji: '🏪', color: '#1db96a', slug: 'la-colonia' },
-  'La Unión':   { emoji: '🛒', color: '#5ba8ff', slug: 'la-union' },
-  'Walmart':    { emoji: '🏬', color: '#ffc220', slug: 'walmart' }
+  'La Colonia': { sigla: 'LC', color: '#1db96a', slug: 'la-colonia' },
+  'La Unión':   { sigla: 'LU', color: '#5ba8ff', slug: 'la-union' },
+  'Walmart':    { sigla: 'W',  color: '#ffc220', slug: 'walmart' }
 };
+
+/* Puntito del color del supermercado, para ponerlo junto a su nombre */
+function puntoSuper(nombre) {
+  return `<i class="punto-super" style="background:${SUPERS[nombre]?.color || 'currentColor'}" aria-hidden="true"></i>`;
+}
+/* Cuadrito con las iniciales del supermercado (tipo logo) */
+function logoSuper(nombre, clase = 'logo-super') {
+  const s = SUPERS[nombre];
+  return `<span class="${clase}" style="--c:${s ? s.color : 'var(--mint)'}" aria-hidden="true">${s ? s.sigla : ico('store')}</span>`;
+}
 const ORDEN_SUPERS = ['La Colonia', 'La Unión', 'Walmart'];
 
 /* ══════════════ AJUSTES (se guardan en este dispositivo) ══════════════

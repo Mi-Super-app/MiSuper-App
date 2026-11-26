@@ -121,7 +121,7 @@ function minimo(p) {
 
 function renderTabs(cats, activa) {
   document.getElementById('comp-tabs').innerHTML = cats.map(c =>
-    `<button class="comp-tab ${c === activa ? 'active' : ''}" data-cat="${c}" role="tab" aria-selected="${c === activa}">${CATEGORIAS[c].emoji} ${CATEGORIAS[c].nombre}</button>`
+    `<button class="comp-tab ${c === activa ? 'active' : ''}" data-cat="${c}" role="tab" aria-selected="${c === activa}">${ico(CATEGORIAS[c].icono)}${CATEGORIAS[c].nombre}</button>`
   ).join('');
 }
 
@@ -129,7 +129,7 @@ function renderTabla(cat) {
   const filas = productos.filter(p => p.categoria === cat);
   const cabeza = `<div class="comp-head">
       <div class="comp-head-cell">Producto</div>
-      ${ORDEN_SUPERS.map(s => `<div class="comp-head-cell">${SUPERS[s].emoji} ${s}</div>`).join('')}
+      ${ORDEN_SUPERS.map(s => `<div class="comp-head-cell">${puntoSuper(s)}${s}</div>`).join('')}
     </div>`;
   const cuerpo = filas.map(p => {
     const vals = ORDEN_SUPERS.map(s => p.precios[s]).filter(v => v !== undefined);
@@ -137,11 +137,11 @@ function renderTabla(cat) {
     const max = Math.max(...vals);
     const celdas = ORDEN_SUPERS.map(s => {
       const v = p.precios[s];
-      if (v === undefined) return `<div class="comp-cell" data-super="${SUPERS[s].emoji} ${s}"><span class="comp-price">—</span></div>`;
+      if (v === undefined) return `<div class="comp-cell" data-super="${s}"><span class="comp-price">—</span></div>`;
       const cls = v === min ? 'comp-price best' : (v === max && max !== min ? 'comp-price high' : 'comp-price');
       const badge = v === min ? '<span class="comp-best-badge">✓ Mejor</span>' : '';
       const antes = p.antes && p.antes[s] ? `<s class="comp-antes">${fmtC(p.antes[s])}</s>` : '';
-      return `<div class="comp-cell" data-super="${SUPERS[s].emoji} ${s}">${antes}<span class="${cls}">${fmtC(v)}</span>${badge}</div>`;
+      return `<div class="comp-cell" data-super="${s}">${antes}<span class="${cls}">${fmtC(v)}</span>${badge}</div>`;
     }).join('');
     return `<div class="comp-row"><div class="comp-cell comp-prod">${esc(p.nombre)}</div>${celdas}</div>`;
   }).join('');
@@ -164,9 +164,9 @@ function renderTelefono() {
   const totales = ORDEN_SUPERS.map(s => ({ s, total: elegidos.reduce((a, p) => a + (p.precios[s] ?? Infinity), 0) }));
   const mejor = totales.reduce((a, b) => (b.total < a.total ? b : a));
   document.getElementById('ps-items').innerHTML = elegidos.map((p, i) => {
-    const emoji = CATEGORIAS[p.categoria]?.emoji || '🛒';
+    const icono = ico(CATEGORIAS[p.categoria]?.icono || 'shopping-cart');
     const nombre = p.nombre.replace('entera ', '').replace(' de soya', '').replace(' 96%', '');
-    return `<div class="ps-item"><span class="ps-item-name">${emoji} ${esc(nombre)}</span><span class="ps-item-price">${fmtC(p.precios[mejor.s])}</span><span class="ps-item-check" ${i === 2 ? 'style="border-color:rgba(255,255,255,0.2)"' : ''}>${i < 2 ? '✓' : ''}</span></div>`;
+    return `<div class="ps-item"><span class="ps-item-name">${icono}${esc(nombre)}</span><span class="ps-item-price">${fmtC(p.precios[mejor.s])}</span><span class="ps-item-check" ${i === 2 ? 'style="border-color:rgba(255,255,255,0.2)"' : ''}>${i < 2 ? '✓' : ''}</span></div>`;
   }).join('');
   document.getElementById('ps-donde').textContent = mejor.s;
   document.getElementById('ps-total').textContent = fmtC(mejor.total);
@@ -199,7 +199,7 @@ function renderEjemplo() {
     const info = SUPERS[t.s];
     const gana = t.completo && t.total === min;
     return `<div class="ejemplo-card reveal visible ${gana ? 'gana' : ''}">
-      <div class="ej-cabeza"><span class="ej-logo" style="background:${info.color}22;color:${info.color}">${info.emoji}</span><span class="ej-nombre">${t.s}</span>${gana ? '<span class="ej-badge">🏆 Más barato</span>' : ''}</div>
+      <div class="ej-cabeza">${logoSuper(t.s, 'ej-logo')}<span class="ej-nombre">${t.s}</span>${gana ? `<span class="ej-badge">${ico('trophy')}Más barato</span>` : ''}</div>
       <div class="ej-total" style="color:${info.color}">${t.completo ? fmtC(t.total) : 'Incompleta'}</div>
       <div class="ej-dif">${!t.completo ? 'Le faltan productos' : gana ? 'La opción más económica' : `${fmtC(t.total - min)} más que el más barato`}</div>
     </div>`;
